@@ -1,0 +1,125 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-01-15T00:00:00.000Z",
+  "proxyips": [
+    {
+      "id": 1,
+      "address": "210.61.97.241:81",
+      "type": "ipv4",
+      "remark": "ProxyIP",
+      "enabled": 1,
+      "sort_order": 0,
+      "created_at": "2026-01-14 14:29:28",
+      "updated_at": "2026-01-15 01:02:55"
+    }
+  ],
+  "outbounds": [
+  ],
+  "cfips": [
+    {
+      "id": 4,
+      "address": "mfa.gov.ua",
+      "port": 443,
+      "remark": "mfa.gov.ua",
+      "enabled": 1,
+      "sort_order": 0,
+      "created_at": "2026-01-15 01:42:31",
+      "updated_at": "2026-01-15 01:42:31"
+    },
+    {
+      "id": 5,
+      "address": "saas.sin.fan",
+      "port": 443,
+      "remark": "saas.sin.fan",
+      "enabled": 1,
+      "sort_order": 0,
+      "created_at": "2026-01-15 01:42:32",
+      "updated_at": "2026-01-15 01:42:32"
+    },
+    {
+      "id": 6,
+      "address": "store.ubi.com",
+      "port": 443,
+      "remark": "store.ubi.com",
+      "enabled": 1,
+      "sort_order": 0,
+      "created_at": "2026-01-15 01:42:32",
+      "updated_at": "2026-01-15 01:42:32"
+    },
+    {
+      "id": 7,
+      "address": "cf.130519.xyz",
+      "port": 443,
+      "remark": "130519",
+      "enabled": 1,
+      "sort_order": 0,
+      "created_at": "2026-01-15 01:42:33",
+      "updated_at": "2026-01-15 01:42:33"
+    },
+    {
+      "id": 8,
+      "address": "cf.008500.xyz",
+      "port": 443,
+      "remark": "008500",
+      "enabled": 1,
+      "sort_order": 0,
+      "created_at": "2026-01-15 01:42:33",
+      "updated_at": "2026-01-15 01:42:33"
+    },
+    {
+      "id": 9,
+      "address": "cf.090227.xyz",
+      "port": 443,
+      "remark": "090227",
+      "enabled": 1,
+      "sort_order": 0,
+      "created_at": "2026-01-15 01:42:33",
+      "updated_at": "2026-01-15 01:42:33"
+    },
+    {
+      "id": 10,
+      "address": "cf.877774.xyz",
+      "port": 443,
+      "remark": "877774",
+      "enabled": 1,
+      "sort_order": 0,
+      "created_at": "2026-01-15 01:42:34",
+      "updated_at": "2026-01-15 01:42:34"
+    },
+    {
+      "id": 11,
+      "address": "cdns.doon.eu.org",
+      "port": 443,
+      "remark": "doon",
+      "enabled": 1,
+      "sort_order": 0,
+      "created_at": "2026-01-15 01:42:34",
+      "updated_at": "2026-01-15 01:42:34"
+    },
+    {
+      "id": 12,
+      "address": "sub.danfeng.eu.org",
+      "port": 443,
+      "remark": "danfeng",
+      "enabled": 1,
+      "sort_order": 0,
+      "created_at": "2026-01-15 01:42:35",
+      "updated_at": "2026-01-15 01:42:35"
+    },
+    {
+      "id": 13,
+      "address": "cf.zhetengsha.eu.org",
+      "port": 443,
+      "remark": "zhetengsha",
+      "enabled": 1,
+      "sort_order": 0,
+      "created_at": "2026-01-15 01:42:35",
+      "updated_at": "2026-01-15 01:42:35"
+    }
+  ],
+  "config": {
+    "uuid": "",
+    "snippets_domain": "",
+    "proxy_path": "/?ed=2560"
+  }
+}
