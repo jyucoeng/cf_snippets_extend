@@ -265,8 +265,6 @@
 - **Base64 订阅内容**（可直接复制到客户端）
 - **订阅地址**（格式：`https://你的域名/sub/你的UUID`）
 
-![生成订阅](screenshots/generate-sub.png)
-
 ---
 
 ### 5. 导入到客户端
