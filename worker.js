@@ -98,7 +98,8 @@ Star
 <button class="tab active" onclick="switchTab('proxyip',this)">ProxyIP</button>
 <button class="tab" onclick="switchTab('outbound',this)">全局出站</button>
 <button class="tab" onclick="switchTab('cfip',this)">CFIP</button>
-<button class="tab" onclick="switchTab('subscribe',this)">订阅生成</button>
+<button class="tab" onclick="switchTab('vlessSubscribe',this)">订阅生成VLESS</button>
+<button class="tab" onclick="switchTab('ssSubscribe',this)">订阅生成SS</button>
 </div>
 
 <div id="proxyipPanel" class="panel">
@@ -151,16 +152,35 @@ Star
 <table class="table"><thead><tr><th><input type="checkbox" id="cfipCheckAll" onchange="checkAll('cfip',this.checked)"></th><th>ID</th><th>地址</th><th>端口</th><th>备注</th><th>状态</th><th>操作</th></tr></thead><tbody id="cfipTable"></tbody></table>
 </div>
 
-<div id="subscribePanel" class="panel hidden">
-<h2 style="margin-bottom:16px">订阅生成</h2>
-<div id="subAlert"></div>
-<div class="form-group"><label>UUID</label><input type="text" id="uuidInput" placeholder="12cbf86b-22bb-45b6-aadb-cb622a538d6a"></div>
-<div class="form-group"><label>Snippets 域名</label><input type="text" id="domainInput" placeholder="your-worker.workers.dev"></div>
-<div class="form-group"><label>Path</label><input type="text" id="pathInput" value="/?ed=2560"></div>
-<button class="btn btn-primary" onclick="generate()">🔄 刷新订阅</button>
-<div id="subResult" class="result-box hidden">
-<p><b>Base64:</b></p><pre id="base64Out"></pre><button class="btn btn-success btn-sm" onclick="copy('base64Out')">复制</button>
-<p style="margin-top:12px"><b>订阅地址:</b></p><pre id="subUrl"></pre><button class="btn btn-success btn-sm" onclick="copy('subUrl')">复制</button>
+<div id="vlessSubscribePanel" class="panel hidden">
+<h2 style="margin-bottom:16px">VLESS 订阅生成</h2>
+<div id="vlessAlert"></div>
+
+<div class="form-group"><label>UUID</label><input type="text" id="vlessUuidInput" placeholder="12cbf86b-22bb-45b6-aadb-cb622a538d6a"></div>
+<div class="form-group"><label>Snippets/Worker 域名</label><input type="text" id="vlessDomainInput" placeholder="your-worker.workers.dev"></div>
+<div class="form-group"><label>Path</label><input type="text" id="vlessPathInput" placeholder="/?ed=2560"></div>
+
+<button class="btn btn-primary" onclick="generateVless()">💾 保存并生成订阅</button>
+
+<div id="vlessResult" class="result-box hidden">
+<p><b>订阅地址:</b></p><pre id="vlessSubUrl"></pre><button class="btn btn-success btn-sm" onclick="copy('vlessSubUrl')">复制</button>
+<p style="margin-top:12px"><b>Clash 订阅地址:</b></p><pre id="vlessClashUrl"></pre><button class="btn btn-success btn-sm" onclick="copy('vlessClashUrl')">复制</button>
+</div>
+</div>
+
+<div id="ssSubscribePanel" class="panel hidden">
+<h2 style="margin-bottom:16px">Shadowsocks 订阅生成</h2>
+<div id="ssAlert"></div>
+
+<div class="form-group"><label>密码 (Password)</label><input type="text" id="ssPasswordInput" placeholder="your-password"></div>
+<div class="form-group"><label>Snippets/Worker 域名</label><input type="text" id="ssDomainInput" placeholder="your-worker.workers.dev"></div>
+<div class="form-group"><label>Path (留空则使用密码)</label><input type="text" id="ssPathInput" placeholder="留空则使用密码作为路径"></div>
+
+<button class="btn btn-primary" onclick="generateSS()">💾 保存并生成订阅</button>
+
+<div id="ssResult" class="result-box hidden">
+<p><b>订阅地址:</b></p><pre id="ssSubUrl"></pre><button class="btn btn-success btn-sm" onclick="copy('ssSubUrl')">复制</button>
+<p style="margin-top:12px"><b>Clash 订阅地址:</b></p><pre id="ssClashUrl"></pre><button class="btn btn-success btn-sm" onclick="copy('ssClashUrl')">复制</button>
 </div>
 </div>
 </div>
@@ -289,9 +309,41 @@ return(await fetch(API+path,opt)).json();
 async function load(){
 showLoading();
 try{
-await Promise.all([loadProxyIPs(),loadOutbounds(),loadCFIPs(),loadConfig()]);
+await Promise.all([loadProxyIPs(),loadOutbounds(),loadCFIPs(),loadVlessConfig(),loadSSConfig()]);
 }finally{
 hideLoading();
+}
+}
+
+async function loadVlessConfig(){
+const d=await api('/subscribe/vless/config');
+if(d.success&&d.data){
+document.getElementById('vlessUuidInput').value=d.data.uuid||'';
+document.getElementById('vlessDomainInput').value=d.data.snippets_domain||'';
+document.getElementById('vlessPathInput').value=d.data.proxy_path||'';
+if(d.data.uuid&&d.data.snippets_domain){
+const subUrl=location.origin+'/sub/'+d.data.uuid;
+const clashUrl='https://sublink.eooce.com/clash?config='+encodeURIComponent(subUrl);
+document.getElementById('vlessSubUrl').textContent=subUrl;
+document.getElementById('vlessClashUrl').textContent=clashUrl;
+document.getElementById('vlessResult').classList.remove('hidden');
+}
+}
+}
+
+async function loadSSConfig(){
+const d=await api('/subscribe/ss/config');
+if(d.success&&d.data){
+document.getElementById('ssPasswordInput').value=d.data.password||'';
+document.getElementById('ssDomainInput').value=d.data.snippets_domain||'';
+document.getElementById('ssPathInput').value=d.data.proxy_path||'';
+if(d.data.password&&d.data.snippets_domain){
+const subUrl=location.origin+'/sub/ss/'+d.data.password;
+const clashUrl='https://sublink.eooce.com/clash?config='+encodeURIComponent(subUrl);
+document.getElementById('ssSubUrl').textContent=subUrl;
+document.getElementById('ssClashUrl').textContent=clashUrl;
+document.getElementById('ssResult').classList.remove('hidden');
+}
 }
 }
 
@@ -357,27 +409,6 @@ document.getElementById('cfipTable').innerHTML=d.data.map(i=>\`<tr>
 <button class="btn btn-warning btn-sm" onclick="editItem('cfip',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}',\${i.port})">编辑</button>
 </td></tr>\`).join('');
 document.getElementById('cfipCheckAll').checked=false;
-}
-}
-
-async function loadConfig(){
-const d=await api('/subscribe/generate');
-if(d.success&&d.data){
-document.getElementById('uuidInput').value=d.data.uuid||'';
-document.getElementById('domainInput').value=d.data.snippets_domain||'';
-document.getElementById('pathInput').value=d.data.proxy_path||'/?ed=2560';
-// 如果已有配置，自动生成并显示订阅
-if(d.data.uuid&&d.data.snippets_domain){
-const uuid=d.data.uuid;
-const domain=d.data.snippets_domain;
-const path=d.data.proxy_path||'/?ed=2560';
-const subData=await api('/subscribe/generate','POST',{uuid,snippetsDomain:domain,proxyPath:path});
-if(subData.success){
-document.getElementById('base64Out').textContent=subData.data.base64;
-document.getElementById('subUrl').textContent=location.origin+'/sub/'+uuid;
-document.getElementById('subResult').classList.remove('hidden');
-}
-}
 }
 }
 
@@ -596,21 +627,47 @@ hideLoading();
 }
 }
 
-async function generate(){
-const uuid=document.getElementById('uuidInput').value.trim();
-const domain=document.getElementById('domainInput').value.trim();
-const path=document.getElementById('pathInput').value.trim()||'/?ed=2560';
+async function generateVless(){
+const uuid=document.getElementById('vlessUuidInput').value.trim();
+const domain=document.getElementById('vlessDomainInput').value.trim();
+let path=document.getElementById('vlessPathInput').value.trim();
+if(!path)path='/?ed=2560';
 if(!uuid||!domain)return alert('请填写UUID和域名');
 
 showLoading();
 try{
-const d=await api('/subscribe/generate','POST',{uuid,snippetsDomain:domain,proxyPath:path});
+const d=await api('/subscribe/vless/generate','POST',{uuid,snippetsDomain:domain,proxyPath:path});
 if(d.success){
-document.getElementById('base64Out').textContent=d.data.base64;
-document.getElementById('subUrl').textContent=location.origin+'/sub/'+uuid;
-document.getElementById('subResult').classList.remove('hidden');
-document.getElementById('subAlert').innerHTML='<div class="alert alert-success">生成成功，共'+d.data.count+'条</div>';
-}else{document.getElementById('subAlert').innerHTML='<div class="alert alert-error">'+d.error+'</div>'}
+const subUrl=location.origin+'/sub/'+uuid;
+const clashUrl='https://sublink.eooce.com/clash?config='+encodeURIComponent(subUrl);
+document.getElementById('vlessSubUrl').textContent=subUrl;
+document.getElementById('vlessClashUrl').textContent=clashUrl;
+document.getElementById('vlessResult').classList.remove('hidden');
+document.getElementById('vlessAlert').innerHTML='<div class="alert alert-success">保存成功，共'+d.data.count+'条节点</div>';
+}else{document.getElementById('vlessAlert').innerHTML='<div class="alert alert-error">'+d.error+'</div>'}
+}finally{
+hideLoading();
+}
+}
+
+async function generateSS(){
+const password=document.getElementById('ssPasswordInput').value.trim();
+const domain=document.getElementById('ssDomainInput').value.trim();
+let path=document.getElementById('ssPathInput').value.trim();
+if(!path)path='/'+password;
+if(!password||!domain)return alert('请填写密码和域名');
+
+showLoading();
+try{
+const d=await api('/subscribe/ss/generate','POST',{password,snippetsDomain:domain,proxyPath:path});
+if(d.success){
+const subUrl=location.origin+'/sub/ss/'+password;
+const clashUrl='https://sublink.eooce.com/clash?config='+encodeURIComponent(subUrl);
+document.getElementById('ssSubUrl').textContent=subUrl;
+document.getElementById('ssClashUrl').textContent=clashUrl;
+document.getElementById('ssResult').classList.remove('hidden');
+document.getElementById('ssAlert').innerHTML='<div class="alert alert-success">保存成功，共'+d.data.count+'条节点</div>';
+}else{document.getElementById('ssAlert').innerHTML='<div class="alert alert-error">'+d.error+'</div>'}
 }finally{
 hideLoading();
 }
@@ -796,11 +853,12 @@ batchType='';
 async function exportData(){
 showLoading();
 try{
-const [proxyips,outbounds,cfips,config]=await Promise.all([
+const [proxyips,outbounds,cfips,vlessConfig,ssConfig]=await Promise.all([
 api('/proxyip'),
 api('/outbound'),
 api('/cfip'),
-api('/subscribe/generate')
+api('/subscribe/vless/config'),
+api('/subscribe/ss/config')
 ]);
 const exportData={
 version:'1.0',
@@ -808,7 +866,8 @@ timestamp:new Date().toISOString(),
 proxyips:proxyips.success?proxyips.data:[],
 outbounds:outbounds.success?outbounds.data:[],
 cfips:cfips.success?cfips.data:[],
-config:config.success?config.data:{}
+vlessConfig:vlessConfig.success?vlessConfig.data:{},
+ssConfig:ssConfig.success?ssConfig.data:{}
 };
 const blob=new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'});
 const url=URL.createObjectURL(blob);
@@ -910,9 +969,19 @@ const results=await Promise.all([
 ...data.cfips.map(item=>api('/cfip','POST',{address:item.address,port:item.port,remark:item.remark,enabled:item.enabled}))
 ]);
 
-// 更新配置
-if(data.config&&data.config.uuid){
-await api('/subscribe/generate','POST',{uuid:data.config.uuid,snippetsDomain:data.config.snippets_domain,proxyPath:data.config.proxy_path});
+// 更新 VLESS 配置
+if(data.vlessConfig&&data.vlessConfig.uuid){
+await api('/subscribe/vless/generate','POST',{uuid:data.vlessConfig.uuid,snippetsDomain:data.vlessConfig.snippets_domain,proxyPath:data.vlessConfig.proxy_path});
+}
+
+// 更新 SS 配置
+if(data.ssConfig&&data.ssConfig.password){
+await api('/subscribe/ss/generate','POST',{password:data.ssConfig.password,snippetsDomain:data.ssConfig.snippets_domain,proxyPath:data.ssConfig.proxy_path});
+}
+
+// 兼容旧版本导出格式（config 字段）
+if(data.config&&data.config.uuid&&!data.vlessConfig){
+await api('/subscribe/vless/generate','POST',{uuid:data.config.uuid,snippetsDomain:data.config.snippets_domain,proxyPath:data.config.proxy_path});
 }
 
 await load();
@@ -1143,8 +1212,14 @@ export default {
         // 路由
         // 公开订阅
         if (path.startsWith('/sub/')) {
-            const uuid = path.split('/')[2];
-            return handleSubscribe(env.DB, uuid);
+            const parts = path.split('/');
+            if (parts[2] === 'ss' && parts[3]) {
+                // SS 订阅: /sub/ss/password
+                return handleSSSubscribe(env.DB, parts[3]);
+            } else if (parts[2]) {
+                // VLESS 订阅: /sub/uuid
+                return handleSubscribe(env.DB, parts[2]);
+            }
         }
 
         // 静态页面
@@ -1206,10 +1281,20 @@ export default {
             if (method === 'DELETE') return handleDeleteCFIP(env.DB, id);
         }
 
-        // 订阅生成
-        if (path === '/api/subscribe/generate') {
-            if (method === 'GET') return handleGetConfig(env.DB);
-            if (method === 'POST') return handleGenerateSubscribe(request, env.DB);
+        // 订阅生成 - VLESS
+        if (path === '/api/subscribe/vless/config') {
+            if (method === 'GET') return handleGetVlessConfig(env.DB);
+        }
+        if (path === '/api/subscribe/vless/generate') {
+            if (method === 'POST') return handleGenerateVlessSubscribe(request, env.DB);
+        }
+        
+        // 订阅生成 - SS
+        if (path === '/api/subscribe/ss/config') {
+            if (method === 'GET') return handleGetSSConfig(env.DB);
+        }
+        if (path === '/api/subscribe/ss/generate') {
+            if (method === 'POST') return handleGenerateSSSubscribe(request, env.DB);
         }
 
         // SOCKS5 测速
@@ -1385,12 +1470,24 @@ async function handleDeleteCFIP(db, id) {
 }
 
 // 订阅
-async function handleGetConfig(db) {
+// VLESS 订阅配置
+async function handleGetVlessConfig(db) {
     const config = await db.prepare('SELECT * FROM subscribe_config WHERE id = 1').first();
     return json({ success: true, data: config });
 }
 
-async function handleGenerateSubscribe(request, db) {
+// SS 订阅配置
+async function handleGetSSConfig(db) {
+    const config = await db.prepare('SELECT * FROM subscribe_config WHERE id = 2').first();
+    if (config) {
+        // 将 uuid 字段作为 password 返回
+        return json({ success: true, data: { password: config.uuid, snippets_domain: config.snippets_domain, proxy_path: config.proxy_path } });
+    }
+    return json({ success: true, data: null });
+}
+
+// VLESS 订阅生成
+async function handleGenerateVlessSubscribe(request, db) {
     const { uuid, snippetsDomain, proxyPath = '/?ed=2560' } = await request.json();
     if (!uuid || !snippetsDomain) return json({ error: 'UUID 和域名不能为空' }, 400);
 
@@ -1402,14 +1499,10 @@ async function handleGenerateSubscribe(request, db) {
 
     const { results: proxyips } = await db.prepare('SELECT * FROM proxy_ips WHERE enabled = 1 ORDER BY sort_order, id').all();
     const { results: outbounds } = await db.prepare('SELECT * FROM outbounds WHERE enabled = 1 ORDER BY sort_order, id').all();
-
-    // 合并 ProxyIP 和 Outbound
     const allProxies = [...proxyips, ...outbounds];
 
-    // 生成所有 ProxyIP × CFIP 的组合（相同 ProxyIP 的放在一起）
     const links = [];
     if (allProxies.length === 0) {
-        // 没有 ProxyIP，只生成 CFIP
         for (const cfip of cfips) {
             let host = cfip.address;
             if (host.includes(':') && !host.startsWith('[')) host = `[${host}]`;
@@ -1417,22 +1510,55 @@ async function handleGenerateSubscribe(request, db) {
             links.push(`vless://${uuid}@${host}:${cfip.port || 443}?encryption=none&security=tls&sni=${domain}&fp=firefox&allowInsecure=1&type=ws&host=${domain}&path=${encodeURIComponent(proxyPath)}#${encodeURIComponent(nodeName)}`);
         }
     } else {
-        // 为每个 ProxyIP 生成所有 CFIP 的组合
         for (const proxyip of allProxies) {
             for (const cfip of cfips) {
                 let host = cfip.address;
                 if (host.includes(':') && !host.startsWith('[')) host = `[${host}]`;
-                
                 const path = proxyPath + (proxyPath.includes('?') ? '&' : '?') + `proxyip=${encodeURIComponent(proxyip.address)}`;
                 const cfipRemark = cfip.remark || host;
                 const nodeName = `${cfipRemark}-${proxyip.remark}`;
-                
                 links.push(`vless://${uuid}@${host}:${cfip.port || 443}?encryption=none&security=tls&sni=${domain}&fp=firefox&allowInsecure=1&type=ws&host=${domain}&path=${encodeURIComponent(path)}#${encodeURIComponent(nodeName)}`);
             }
         }
     }
 
-    return json({ success: true, data: { base64: btoa(unescape(encodeURIComponent(links.join('\n')))), plain: links.join('\n'), count: links.length } });
+    return json({ success: true, data: { plain: links.join('\n'), count: links.length } });
+}
+
+// SS 订阅生成
+async function handleGenerateSSSubscribe(request, db) {
+    const { password, snippetsDomain, proxyPath } = await request.json();
+    if (!password || !snippetsDomain) return json({ error: '密码和域名不能为空' }, 400);
+
+    const domain = snippetsDomain.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const finalPath = proxyPath || `/${password}`;
+    
+    // 保存配置，使用 uuid 字段存储 password
+    await db.prepare('INSERT OR REPLACE INTO subscribe_config (id, uuid, snippets_domain, proxy_path, updated_at) VALUES (2, ?, ?, ?, datetime("now"))').bind(password, domain, finalPath).run();
+
+    const { results: cfips } = await db.prepare('SELECT * FROM cf_ips WHERE enabled = 1 ORDER BY sort_order, id').all();
+    if (cfips.length === 0) return json({ error: '没有启用的 CFIP' }, 400);
+
+    const method = 'none';
+    const links = [];
+    
+    for (const cfip of cfips) {
+        let host = cfip.address;
+        if (host.includes(':') && !host.startsWith('[')) host = `[${host}]`;
+        const port = cfip.port || 443;
+        const nodeName = cfip.remark || host;
+        
+        // SS 格式
+        const ssConfig = `${method}:${password}`;
+        const encodedConfig = btoa(ssConfig);
+        // 原版格式: /path/?ed=2560，只对 = 编码，? 和 / 不编码
+        const pathWithQuery = finalPath + '/?ed=2560';
+        const encodedPath = pathWithQuery.replace(/=/g, '%3D');
+        const ssLink = `ss://${encodedConfig}@${host}:${port}?plugin=v2ray-plugin;mode%3Dwebsocket;host%3D${domain};path%3D${encodedPath};tls;sni%3D${domain};skip-cert-verify%3Dtrue;mux%3D0#${encodeURIComponent(nodeName)}`;
+        links.push(ssLink);
+    }
+    
+    return json({ success: true, data: { plain: links.join('\n'), count: links.length } });
 }
 
 // 公开订阅
@@ -1458,7 +1584,7 @@ async function handleSubscribe(db, uuid) {
         for (const cfip of cfips) {
             let host = cfip.address;
             if (host.includes(':') && !host.startsWith('[')) host = `[${host}]`;
-            const nodeName = cfip.remark || host;
+            const nodeName = (cfip.remark || host) + '-VLESS';
             links.push(`vless://${uuid}@${host}:${cfip.port || 443}?encryption=none&security=tls&sni=${config.snippets_domain}&fp=firefox&allowInsecure=1&type=ws&host=${config.snippets_domain}&path=${encodeURIComponent(proxyPath)}#${encodeURIComponent(nodeName)}`);
         }
     } else {
@@ -1470,9 +1596,70 @@ async function handleSubscribe(db, uuid) {
                 
                 const path = proxyPath + (proxyPath.includes('?') ? '&' : '?') + `proxyip=${encodeURIComponent(proxyip.address)}`;
                 const cfipRemark = cfip.remark || host;
-                const nodeName = `${cfipRemark}-${proxyip.remark}`;
+                const nodeName = `${cfipRemark}-${proxyip.remark}-VLESS`;
                 
                 links.push(`vless://${uuid}@${host}:${cfip.port || 443}?encryption=none&security=tls&sni=${config.snippets_domain}&fp=firefox&allowInsecure=1&type=ws&host=${config.snippets_domain}&path=${encodeURIComponent(path)}#${encodeURIComponent(nodeName)}`);
+            }
+        }
+    }
+
+    return new Response(btoa(unescape(encodeURIComponent(links.join('\n')))), {
+        headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }
+    });
+}
+
+// SS 公开订阅
+async function handleSSSubscribe(db, password) {
+    const config = await db.prepare('SELECT * FROM subscribe_config WHERE id = 2').first();
+    if (!config || password !== config.uuid) return new Response('Not Found', { status: 404 });
+
+    const { results: cfips } = await db.prepare('SELECT * FROM cf_ips WHERE enabled = 1 ORDER BY sort_order, id').all();
+    if (cfips.length === 0) return new Response('No CFIP', { status: 404 });
+
+    const { results: proxyips } = await db.prepare('SELECT * FROM proxy_ips WHERE enabled = 1 ORDER BY sort_order, id').all();
+    const { results: outbounds } = await db.prepare('SELECT * FROM outbounds WHERE enabled = 1 ORDER BY sort_order, id').all();
+
+    const proxyPath = config.proxy_path || '/';
+    const method = 'none';
+    
+    // 合并 ProxyIP 和 Outbound
+    const allProxies = [...proxyips, ...outbounds];
+    
+    const links = [];
+    if (allProxies.length === 0) {
+        // 没有 ProxyIP，只生成 CFIP
+        for (const cfip of cfips) {
+            let host = cfip.address;
+            if (host.includes(':') && !host.startsWith('[')) host = `[${host}]`;
+            const port = cfip.port || 443;
+            const nodeName = (cfip.remark || host) + '-SS';
+            
+            const ssConfig = `${method}:${password}`;
+            const encodedConfig = btoa(ssConfig);
+            const pathWithQuery = proxyPath + '/?ed=2560';
+            const encodedPath = pathWithQuery.replace(/=/g, '%3D');
+            const ssLink = `ss://${encodedConfig}@${host}:${port}?plugin=v2ray-plugin;mode%3Dwebsocket;host%3D${config.snippets_domain};path%3D${encodedPath};tls;sni%3D${config.snippets_domain};skip-cert-verify%3Dtrue;mux%3D0#${encodeURIComponent(nodeName)}`;
+            links.push(ssLink);
+        }
+    } else {
+        // 为每个 ProxyIP 生成所有 CFIP 的组合
+        for (const proxyip of allProxies) {
+            for (const cfip of cfips) {
+                let host = cfip.address;
+                if (host.includes(':') && !host.startsWith('[')) host = `[${host}]`;
+                const port = cfip.port || 443;
+                
+                const path = proxyPath + (proxyPath.includes('?') ? '&' : '?') + `proxyip=${encodeURIComponent(proxyip.address)}`;
+                const pathWithQuery = path + '&ed=2560';
+                const encodedPath = pathWithQuery.replace(/=/g, '%3D');
+                
+                const cfipRemark = cfip.remark || host;
+                const nodeName = `${cfipRemark}-${proxyip.remark}-SS`;
+                
+                const ssConfig = `${method}:${password}`;
+                const encodedConfig = btoa(ssConfig);
+                const ssLink = `ss://${encodedConfig}@${host}:${port}?plugin=v2ray-plugin;mode%3Dwebsocket;host%3D${config.snippets_domain};path%3D${encodedPath};tls;sni%3D${config.snippets_domain};skip-cert-verify%3Dtrue;mux%3D0#${encodeURIComponent(nodeName)}`;
+                links.push(ssLink);
             }
         }
     }
