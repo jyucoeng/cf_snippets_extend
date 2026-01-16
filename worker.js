@@ -65,6 +65,31 @@ input:checked+.slider:before{transform:translateX(20px)}
 .loading-spinner{width:50px;height:50px;border:4px solid #f3f3f3;border-top:4px solid #667eea;border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 .btn:disabled{opacity:.6;cursor:not-allowed}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px}
+.outbound-card{background:#fff;border:2px solid #e1e8ed;border-radius:12px;padding:16px;position:relative;transition:all .3s}
+.outbound-card:hover{box-shadow:0 4px 12px rgba(102,126,234,.2)}
+.outbound-card.offline{border-color:#e1e8ed;background:#fff}
+.outbound-card.online{border-color:#e1e8ed;background:#fff}
+.outbound-card.tested-online{border-color:#48c774;background:#f0fdf4}
+.outbound-card.tested-offline{border-color:#f14668;background:#fff5f7}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.card-title{font-size:16px;font-weight:600;color:#333;margin-bottom:4px;word-break:break-word}
+.card-checkbox{position:absolute;top:12px;right:12px}
+.card-status{display:inline-flex;align-items:center;gap:6px;font-size:13px;margin-bottom:8px}
+.status-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.status-dot.online{background:#48c774}
+.status-dot.offline{background:#f14668}
+.status-dot.unknown{background:#999}
+.card-info{font-size:13px;color:#666;margin-bottom:8px;line-height:1.6}
+.card-info-row{display:flex;justify-content:space-between;margin-bottom:4px}
+.card-latency{font-size:24px;font-weight:bold;text-align:center;margin:12px 0;min-height:36px}
+.card-latency.good{color:#48c774}
+.card-latency.medium{color:#ffdd57}
+.card-latency.bad{color:#f14668}
+.card-latency.unknown{color:#999;font-size:14px}
+.card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.card-actions .btn{flex:1;min-width:70px}
+
 </style>
 </head>
 <body>
@@ -121,12 +146,13 @@ Star
 <div id="outboundPanel" class="panel hidden">
 <div class="panel-header">
 <h2>全局出站管理</h2>
-<div style="display:flex;gap:8px">
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button id="toggleViewBtn" class="btn btn-primary btn-sm" onclick="toggleOutboundView()">📋 切换卡片</button>
 <button id="toggleMaskBtn" class="btn btn-warning btn-sm" onclick="toggleAddressMask()">👁️ 显示地址</button>
 <button class="btn btn-primary btn-sm" onclick="showBatchModal('outbound')">+ 添加</button>
 <button class="btn btn-success btn-sm" onclick="batchEnable('outbound',true)">✓ 批量启用</button>
 <button class="btn btn-warning btn-sm" onclick="batchEnable('outbound',false)">✗ 批量禁用</button>
-<button class="btn btn-success btn-sm" onclick="testAllOutbounds()">🔍 批量测速</button>
+<button class="btn btn-success btn-sm" onclick="testAllOutbounds()">🔍 全量测速</button>
 <button class="btn btn-primary btn-sm" onclick="checkAllExits()">🌍 出站检测</button>
 <button class="btn btn-danger btn-sm" onclick="batchDelete('outbound')">🗑️ 删除</button>
 </div>
@@ -136,7 +162,10 @@ Star
 1、测速过程仅从CF的边缘节点发起连接，所以被墙的节点也可以测延迟，同时因为不会过墙，所以不会导致节点被墙；延迟仅代表CF边缘节点到socks5/http节点的延迟，用于判断节点是否连通，实际使用受优选IP/域名影响可能差异较大。<br>
 2、本地代理（127.0.0.1）无法从 CF 访问会显示离线。
 </div>
+<div id="outboundListView">
 <table class="table"><thead><tr><th><input type="checkbox" id="outboundCheckAll" onchange="checkAll('outbound',this.checked)"></th><th>ID</th><th>地址</th><th>类型</th><th>出站信息</th><th>备注</th><th>延迟</th><th>状态</th><th>操作</th></tr></thead><tbody id="outboundTable"></tbody></table>
+</div>
+<div id="outboundCardView" class="card-grid hidden"></div>
 </div>
 
 <div id="cfipPanel" class="panel hidden">
@@ -237,9 +266,26 @@ Star
 const API='/api';
 let apiKey=localStorage.getItem('apiKey'),modalType='',editId=null;
 let showFullAddress=false; // 是否显示完整地址
+let outboundViewMode=localStorage.getItem('outboundViewMode')||'list'; // 视图模式：list 或 card
 
 function showLoading(){document.getElementById('loadingOverlay').classList.remove('hidden')}
 function hideLoading(){document.getElementById('loadingOverlay').classList.add('hidden')}
+
+function toggleOutboundView(){
+outboundViewMode=outboundViewMode==='list'?'card':'list';
+localStorage.setItem('outboundViewMode',outboundViewMode);
+const btn=document.getElementById('toggleViewBtn');
+if(outboundViewMode==='card'){
+btn.textContent='📋 切换列表';
+document.getElementById('outboundListView').classList.add('hidden');
+document.getElementById('outboundCardView').classList.remove('hidden');
+}else{
+btn.textContent='📋 切换卡片';
+document.getElementById('outboundListView').classList.remove('hidden');
+document.getElementById('outboundCardView').classList.add('hidden');
+}
+loadOutbounds();
+}
 
 function toggleAddressMask(){
 showFullAddress=!showFullAddress;
@@ -366,6 +412,7 @@ document.getElementById('proxyipCheckAll').checked=false;
 async function loadOutbounds(){
 const d=await api('/outbound');
 if(d.success){
+// 列表视图
 document.getElementById('outboundTable').innerHTML=d.data.map(i=>{
 let exitInfo='-';
 if(i.exit_country||i.exit_city){
@@ -392,6 +439,63 @@ return \`<tr id="outbound-\${i.id}">
 </td></tr>\`;
 }).join('');
 document.getElementById('outboundCheckAll').checked=false;
+
+// 卡片视图
+document.getElementById('outboundCardView').innerHTML=d.data.map(i=>{
+let exitInfo='未检测';
+let exitClass='unknown';
+if(i.exit_country||i.exit_city){
+const country=i.exit_country||'';
+const city=i.exit_city||'';
+exitInfo=country&&city?country+'-'+city:(country||city);
+exitClass='online';
+}
+const statusClass=i.enabled?'online':'offline';
+const statusText=i.enabled?'已启用':'已禁用';
+return \`<div class="outbound-card \${statusClass}" id="outbound-card-\${i.id}">
+<input type="checkbox" class="card-checkbox outbound-check" value="\${i.id}">
+<div class="card-header">
+<div style="flex:1;padding-right:30px">
+<div class="card-title">\${i.remark||'节点-'+i.id}</div>
+<div class="card-status">
+<span class="status-dot \${statusClass}"></span>
+<span>\${statusText}</span>
+<span class="badge badge-info" style="margin-left:4px">\${i.type}</span>
+</div>
+</div>
+</div>
+<div class="card-info">
+<div class="card-info-row">
+<span>地址:</span>
+<span style="word-break:break-all;text-align:right">\${maskAddress(i.address)}</span>
+</div>
+<div class="card-info-row" style="cursor:pointer" onclick="showExitDetail(\${i.id})" title="点击查看详情">
+<span>出站:</span>
+<span id="exit-card-\${i.id}">\${exitInfo}</span>
+</div>
+</div>
+<div class="card-latency unknown" id="out-lat-card-\${i.id}">未测速</div>
+<div class="card-actions">
+<button class="btn btn-success btn-sm" onclick="testSingleOutbound(\${i.id})">测速</button>
+<button class="btn btn-warning btn-sm" onclick="editItem('outbound',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}')">编辑</button>
+<label class="switch" style="margin:0">
+<input type="checkbox" \${i.enabled?'checked':''} onchange="toggle('outbound',\${i.id},this.checked)">
+<span class="slider"></span>
+</label>
+</div>
+</div>\`;
+}).join('');
+
+// 根据当前视图模式显示对应的视图
+if(outboundViewMode==='card'){
+document.getElementById('outboundListView').classList.add('hidden');
+document.getElementById('outboundCardView').classList.remove('hidden');
+document.getElementById('toggleViewBtn').textContent='📋 切换列表';
+}else{
+document.getElementById('outboundListView').classList.remove('hidden');
+document.getElementById('outboundCardView').classList.add('hidden');
+document.getElementById('toggleViewBtn').textContent='📋 切换卡片';
+}
 }
 }
 
@@ -484,34 +588,96 @@ console.error('批量测速异常:',e);
 
 async function testSingleOutbound(id){
 const latCell=document.getElementById('out-lat-'+id);
-if(!latCell)return;
+const latCardCell=document.getElementById('out-lat-card-'+id);
+const card=document.getElementById('outbound-card-'+id);
+if(!latCell&&!latCardCell)return;
+
+// 更新列表视图
+if(latCell){
 latCell.innerHTML='<span style="display:inline-block;width:12px;height:12px;border:2px solid #667eea;border-top:2px solid transparent;border-radius:50%;animation:spin 0.6s linear infinite"></span>';
 latCell.style.color='#667eea';
+}
+// 更新卡片视图
+if(latCardCell){
+latCardCell.innerHTML='<span style="display:inline-block;width:16px;height:16px;border:3px solid #667eea;border-top:3px solid transparent;border-radius:50%;animation:spin 0.6s linear infinite"></span>';
+latCardCell.className='card-latency unknown';
+}
+
 try{
 const d=await api('/test-outbound','POST',{id});
 if(d.success&&d.results&&d.results.length>0){
 const result=d.results[0];
 if(result.status==='online'){
-latCell.textContent=result.latency+'ms';
-latCell.style.color=result.latency<200?'#48c774':result.latency<500?'#ffdd57':'#f14668';
+const latency=result.latency;
+const color=latency<200?'#48c774':latency<500?'#ffdd57':'#f14668';
+const cardClass=latency<200?'good':latency<500?'medium':'bad';
+// 更新列表视图
+if(latCell){
+latCell.textContent=latency+'ms';
+latCell.style.color=color;
+}
+// 更新卡片视图
+if(latCardCell){
+latCardCell.textContent=latency+'ms';
+latCardCell.className='card-latency '+cardClass;
+}
+// 更新卡片边框颜色为绿色（通）
+if(card){
+card.className=card.className.replace(/tested-\w+/g,'').trim()+' tested-online';
+}
 }else{
+// 更新列表视图
+if(latCell){
 latCell.textContent='离线';
 latCell.style.color='#f14668';
 latCell.title=result.error||'连接失败';
 }
+// 更新卡片视图
+if(latCardCell){
+latCardCell.textContent='离线';
+latCardCell.className='card-latency bad';
+}
+// 更新卡片边框颜色为红色（不通）
+if(card){
+card.className=card.className.replace(/tested-\w+/g,'').trim()+' tested-offline';
+}
+}
 }else{
+if(latCell){
 latCell.textContent='失败';
 latCell.style.color='#f14668';
 }
+if(latCardCell){
+latCardCell.textContent='失败';
+latCardCell.className='card-latency bad';
+}
+// 更新卡片边框颜色为红色（不通）
+if(card){
+card.className=card.className.replace(/tested-\w+/g,'').trim()+' tested-offline';
+}
+}
 }catch(e){
+if(latCell){
 latCell.textContent='错误';
 latCell.style.color='#f14668';
+}
+if(latCardCell){
+latCardCell.textContent='错误';
+latCardCell.className='card-latency bad';
+}
+// 更新卡片边框颜色为红色（不通）
+if(card){
+card.className=card.className.replace(/tested-\w+/g,'').trim()+' tested-offline';
+}
 }
 }
 
 async function testAllOutbounds(){
 const rows=document.querySelectorAll('[id^="outbound-"]');
-if(rows.length===0)return alert('没有出站代理');
+const cards=document.querySelectorAll('[id^="outbound-card-"]');
+if(rows.length===0&&cards.length===0)return alert('没有出站代理');
+
+// 更新列表视图的加载状态
 rows.forEach(row=>{
 const latCell=row.querySelector('[id^="out-lat-"]');
 if(latCell){
@@ -519,19 +685,57 @@ latCell.innerHTML='<span style="display:inline-block;width:12px;height:12px;bord
 latCell.style.color='#667eea';
 }
 });
+
+// 更新卡片视图的加载状态
+cards.forEach(card=>{
+const latCell=card.querySelector('[id^="out-lat-card-"]');
+if(latCell){
+latCell.innerHTML='<span style="display:inline-block;width:16px;height:16px;border:3px solid #667eea;border-top:3px solid transparent;border-radius:50%;animation:spin 0.6s linear infinite"></span>';
+latCell.className='card-latency unknown';
+}
+});
+
 try{
 const d=await api('/test-outbound','POST',{});
 if(d.success&&d.results){
 d.results.forEach(result=>{
 const latCell=document.getElementById('out-lat-'+result.id);
-if(latCell){
+const latCardCell=document.getElementById('out-lat-card-'+result.id);
+const card=document.getElementById('outbound-card-'+result.id);
+const latency=result.latency;
+const color=latency<200?'#48c774':latency<500?'#ffdd57':'#f14668';
+const cardClass=latency<200?'good':latency<500?'medium':'bad';
+
 if(result.status==='online'){
-latCell.textContent=result.latency+'ms';
-latCell.style.color=result.latency<200?'#48c774':result.latency<500?'#ffdd57':'#f14668';
+// 更新列表视图
+if(latCell){
+latCell.textContent=latency+'ms';
+latCell.style.color=color;
+}
+// 更新卡片视图
+if(latCardCell){
+latCardCell.textContent=latency+'ms';
+latCardCell.className='card-latency '+cardClass;
+}
+// 更新卡片边框颜色为绿色（通）
+if(card){
+card.className=card.className.replace(/tested-\w+/g,'').trim()+' tested-online';
+}
 }else{
+// 更新列表视图
+if(latCell){
 latCell.textContent='离线';
 latCell.style.color='#f14668';
 latCell.title=result.error||'连接失败';
+}
+// 更新卡片视图
+if(latCardCell){
+latCardCell.textContent='离线';
+latCardCell.className='card-latency bad';
+}
+// 更新卡片边框颜色为红色（不通）
+if(card){
+card.className=card.className.replace(/tested-\w+/g,'').trim()+' tested-offline';
 }
 }
 });
@@ -544,6 +748,13 @@ const latCell=row.querySelector('[id^="out-lat-"]');
 if(latCell&&latCell.innerHTML.includes('spin')){
 latCell.textContent='-';
 latCell.style.color='#999';
+}
+});
+cards.forEach(card=>{
+const latCell=card.querySelector('[id^="out-lat-card-"]');
+if(latCell&&latCell.innerHTML.includes('spin')){
+latCell.textContent='未测速';
+latCell.className='card-latency unknown';
 }
 });
 }
@@ -783,41 +994,70 @@ console.error('检测异常:',e);
 }
 
 async function checkAllExits(){
-const rows=document.querySelectorAll('[id^="outbound-"]');
-if(rows.length===0)return alert('没有出站代理');
-rows.forEach(row=>{
-const exitCell=row.querySelector('[id^="exit-"]');
+// 获取所有勾选的checkbox
+const checkedBoxes=document.querySelectorAll('.outbound-check:checked');
+if(checkedBoxes.length===0)return alert('请先勾选要检测的出站代理');
+
+const ids=Array.from(checkedBoxes).map(cb=>parseInt(cb.value));
+
+// 更新加载状态
+ids.forEach(id=>{
+const exitCell=document.getElementById('exit-'+id);
+const exitCardCell=document.getElementById('exit-card-'+id);
 if(exitCell){
 exitCell.innerHTML='<span style="display:inline-block;width:12px;height:12px;border:2px solid #667eea;border-top:2px solid transparent;border-radius:50%;animation:spin 0.6s linear infinite"></span>';
 }
+if(exitCardCell){
+exitCardCell.innerHTML='<span style="display:inline-block;width:12px;height:12px;border:2px solid #667eea;border-top:2px solid transparent;border-radius:50%;animation:spin 0.6s linear infinite"></span>';
+}
 });
+
 try{
-const d=await api('/check-exit','POST',{});
+const d=await api('/check-exit','POST',{ids});
 if(d.success&&d.results){
 d.results.forEach(result=>{
 const exitCell=document.getElementById('exit-'+result.id);
-if(exitCell){
+const exitCardCell=document.getElementById('exit-card-'+result.id);
 if(result.success){
 const country=result.country||'';
 const city=result.city||'';
 const exitInfo=country&&city?country+'-'+city:(country||city||'未知');
 const checkTime=new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+// 更新列表视图
+if(exitCell){
 exitCell.innerHTML=\`\${exitInfo} <span style="font-size:11px;color:#999">(\${checkTime})</span>\`;
 exitCell.style.cursor='pointer';
+}
+// 更新卡片视图
+if(exitCardCell){
+exitCardCell.textContent=exitInfo;
+}
 }else{
+// 更新列表视图
+if(exitCell){
 exitCell.textContent='检测失败';
 exitCell.style.color='#f14668';
+}
+// 更新卡片视图
+if(exitCardCell){
+exitCardCell.textContent='检测失败';
+exitCardCell.style.color='#f14668';
 }
 }
 });
 }
 }catch(e){
 alert('检测失败: '+e.message);
-rows.forEach(row=>{
-const exitCell=row.querySelector('[id^="exit-"]');
+ids.forEach(id=>{
+const exitCell=document.getElementById('exit-'+id);
+const exitCardCell=document.getElementById('exit-card-'+id);
 if(exitCell&&exitCell.innerHTML.includes('spin')){
 exitCell.textContent='-';
 exitCell.style.color='#999';
+}
+if(exitCardCell&&exitCardCell.innerHTML.includes('spin')){
+exitCardCell.textContent='未检测';
+exitCardCell.style.color='#999';
 }
 });
 }
@@ -1858,7 +2098,7 @@ function parseHttpAddress(address) {
 // 出站检测（检查代理的出口 IP 信息）
 async function handleCheckExit(request, db) {
     try {
-        const { id } = await request.json();
+        const { id, ids } = await request.json();
         
         // 获取要检测的 Outbound
         let outbounds = [];
@@ -1866,6 +2106,11 @@ async function handleCheckExit(request, db) {
             // 检测单个
             const outbound = await db.prepare('SELECT * FROM outbounds WHERE id = ?').bind(id).first();
             if (outbound) outbounds = [outbound];
+        } else if (ids && Array.isArray(ids) && ids.length > 0) {
+            // 检测指定的多个
+            const placeholders = ids.map(() => '?').join(',');
+            const { results } = await db.prepare(`SELECT * FROM outbounds WHERE id IN (${placeholders}) ORDER BY sort_order, id`).bind(...ids).all();
+            outbounds = results;
         } else {
             // 检测所有
             const { results } = await db.prepare('SELECT * FROM outbounds ORDER BY sort_order, id').all();
