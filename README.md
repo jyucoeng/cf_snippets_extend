@@ -63,6 +63,7 @@
 
 ### ProxyIP 管理
 ![ProxyIP 管理](screenshots/proxyip.png)
+![ProxyIP 管理-卡片](screenshots/proxyip2.png)
 > 管理普通 IP/域名代理，支持批量操作
 
 ### 全局出站管理
@@ -76,6 +77,7 @@
 
 ### CFIP 管理
 ![CFIP 管理](screenshots/cfip.png)
+![CFIP 管理-卡片](screenshots/cfip2.png)
 > 管理 Cloudflare 优选 IP/域名
 
 ### 订阅生成

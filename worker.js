@@ -54,71 +54,80 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:linear-g
 .alert-error{background:#ffebee;color:#c62828}
 .result-box{background:#f7f9fc;padding:16px;border-radius:8px;margin-top:16px}
 .result-box pre{background:#fff;padding:12px;border-radius:4px;font-size:12px;white-space:pre-wrap;word-break:break-all;max-height:150px;overflow:auto}
-.switch{position:relative;display:inline-block;width:44px;height:24px}
+.switch{position:relative;display:inline-block;width:40px;height:22px}
 .switch input{opacity:0;width:0;height:0}
-.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:24px}
-.slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;border-radius:22px}
+.slider:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
 input:checked+.slider{background:#667eea}
-input:checked+.slider:before{transform:translateX(20px)}
+input:checked+.slider:before{transform:translateX(18px)}
 .addr-cell{max-width:200px;word-break:break-all;cursor:help}
 .loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;z-index:2000}
 .loading-spinner{width:50px;height:50px;border:4px solid #f3f3f3;border-top:4px solid #667eea;border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 .btn:disabled{opacity:.6;cursor:not-allowed}
-.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px}
-.outbound-card{background:#fff;border:2px solid #e1e8ed;border-radius:12px;padding:16px;position:relative;transition:all .3s}
+.card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:16px}
+.outbound-card{background:#fff;border:2px solid #e1e8ed;border-radius:12px;padding:12px;position:relative;transition:all .3s;min-width:0;overflow:hidden}
 .outbound-card:hover{box-shadow:0 4px 12px rgba(102,126,234,.2)}
 .outbound-card.offline{border-color:#e1e8ed;background:#fff}
 .outbound-card.online{border-color:#e1e8ed;background:#fff}
 .outbound-card.tested-online{border-color:#48c774;background:#f0fdf4}
 .outbound-card.tested-offline{border-color:#f14668;background:#fff5f7}
-.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
-.card-title{font-size:16px;font-weight:600;color:#333;margin-bottom:4px;word-break:break-word}
-.card-checkbox{position:absolute;top:12px;right:12px}
-.card-status{display:inline-flex;align-items:center;gap:6px;font-size:13px;margin-bottom:8px}
-.status-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;min-width:0;overflow:hidden}
+.card-title{font-size:15px;font-weight:600;color:#333;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;min-width:0}
+.card-checkbox{position:absolute;top:10px;right:10px}
+.card-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;margin-bottom:6px}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
 .status-dot.online{background:#48c774}
 .status-dot.offline{background:#f14668}
 .status-dot.unknown{background:#999}
-.card-info{font-size:13px;color:#666;margin-bottom:8px;line-height:1.6}
-.card-info-row{display:flex;justify-content:space-between;margin-bottom:4px}
-.card-latency{font-size:24px;font-weight:bold;text-align:center;margin:12px 0;min-height:36px}
+.card-info{font-size:12px;color:#666;margin-bottom:8px;line-height:1.5;min-width:0;overflow:hidden}
+.card-info-row{display:flex;justify-content:space-between;margin-bottom:3px;overflow:hidden;min-width:0}
+.card-info-row>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;min-width:0}
+.card-latency{font-size:20px;font-weight:bold;text-align:center;margin:8px 0;min-height:28px}
 .card-latency.good{color:#48c774}
 .card-latency.medium{color:#ffdd57}
 .card-latency.bad{color:#f14668}
-.card-latency.unknown{color:#999;font-size:14px}
-.card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
-.card-actions .btn{flex:1;min-width:70px}
+.card-latency.unknown{color:#999;font-size:13px}
+.card-actions{display:flex;gap:6px;flex-wrap:nowrap;margin-top:10px}
+.card-actions .btn{flex:0 0 auto;min-width:auto}
+.card-actions .card-latency{flex:1;text-align:left;margin:0;font-size:16px;font-weight:600;min-height:auto;display:flex;align-items:center}
 .exit-link{color:#667eea;text-decoration:underline;cursor:pointer;transition:all .2s}
 .exit-link:hover{color:#5568d3;text-decoration:underline;font-weight:600}
 @media (max-width:768px){
 .container{padding:10px}
-.header{flex-direction:column;gap:12px;align-items:stretch}
-.header h1{font-size:20px;text-align:center}
-.header>div{justify-content:center;flex-wrap:wrap}
-.tabs{overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
-.tab{flex-shrink:0}
-.panel{padding:16px}
-.panel-header{flex-direction:column;gap:12px;align-items:stretch}
-.panel-header h2{font-size:16px;text-align:center}
-.panel-header>div{justify-content:center}
-.table{font-size:12px;display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.table thead{display:none}
-.table tbody{display:block}
-.table tr{display:block;margin-bottom:12px;border:1px solid #e1e8ed;border-radius:8px;padding:8px;background:#fff}
-.table td{display:block;text-align:left!important;padding:6px 8px;border:none}
-.table td:before{content:attr(data-label);font-weight:600;display:inline-block;width:80px;color:#667eea}
-.table td:first-child{border-top-left-radius:8px;border-top-right-radius:8px}
-.table td:last-child{border-bottom-left-radius:8px;border-bottom-right-radius:8px}
-.actions{justify-content:flex-start;flex-wrap:wrap}
-.btn-sm{font-size:12px;padding:6px 12px}
-.card-grid{grid-template-columns:1fr;gap:12px}
-.modal-content,.modal-content-large{width:95%;max-width:95%;margin:10px;padding:16px}
-.form-group label{font-size:14px}
-.form-group input,.form-group select,.form-group textarea{font-size:14px;padding:10px}
-.login-box{padding:24px;margin:10px}
-.result-box pre{font-size:11px;max-height:120px}
+.header{flex-direction:column;gap:8px;align-items:stretch}
+.header h1{font-size:18px;text-align:center}
+.header>div{justify-content:center;flex-wrap:wrap;gap:6px}
+#toggleGlobalViewBtn{display:none!important}
+.tabs{overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;padding:8px 10px}
+.tab{flex-shrink:0;font-size:12px;padding:6px 12px}
+.panel{padding:12px}
+.panel-header{flex-direction:column;gap:8px;align-items:stretch}
+.panel-header h2{font-size:14px;text-align:center;margin-bottom:4px}
+.panel-header>div{justify-content:center;gap:4px}
+.panel>div[style*="background:#e8f0fe"]{font-size:11px;padding:8px;margin-bottom:8px}
+#proxyipListView,#outboundListView,#cfipListView{display:none!important}
+#proxyipCardView,#outboundCardView,#cfipCardView{display:grid!important}
+.card-grid{grid-template-columns:1fr;gap:10px}
+.outbound-card{padding:10px}
+.card-title{font-size:14px}
+.card-info{font-size:11px;margin-bottom:6px}
+.card-info-row{font-size:11px;margin-bottom:2px}
+.card-actions{gap:8px;margin-top:8px}
+.modal-content,.modal-content-large{width:95%;max-width:95%;margin:10px;padding:12px}
+.modal-header h3{font-size:16px}
+.form-group{margin-bottom:12px}
+.form-group label{font-size:13px}
+.form-group input,.form-group select,.form-group textarea{font-size:13px;padding:8px}
+.login-box{padding:20px;margin:10px}
+.login-box h1{font-size:20px}
+.result-box{padding:12px}
+.result-box pre{font-size:10px;max-height:100px;padding:8px}
+.switch{width:36px;height:20px}
+.switch .slider:before{height:14px;width:14px;left:3px;bottom:3px}
+.switch input:checked+.slider:before{transform:translateX(16px)}
 }
+
 
 </style>
 </head>
@@ -147,7 +156,7 @@ input:checked+.slider:before{transform:translateX(20px)}
 Star
 </a>
 </div>
-<div style="display:flex;gap:8px;flex-shrink:0"><button class="btn btn-success btn-sm" onclick="exportData()">📤 导出</button><button class="btn btn-primary btn-sm" onclick="importData()">📥 导入</button><button class="btn btn-danger btn-sm" onclick="logout()">退出</button></div>
+<div style="display:flex;gap:8px;flex-shrink:0;justify-content:flex-end"><button id="toggleGlobalViewBtn" class="btn btn-primary btn-sm" data-icon="📋" onclick="toggleGlobalView()">📋 切换卡片</button><button class="btn btn-success btn-sm" data-icon="📤" onclick="exportData()">📤 导出</button><button class="btn btn-primary btn-sm" data-icon="📥" onclick="importData()">📥 导入</button><button class="btn btn-danger btn-sm" data-icon="🚪" onclick="logout()">🚪 退出</button></div>
 </div>
 <div class="tabs">
 <button class="tab active" onclick="switchTab('proxyip',this)">ProxyIP(反代IP)</button>
@@ -160,32 +169,34 @@ Star
 <div id="proxyipPanel" class="panel">
 <div class="panel-header">
 <h2>ProxyIP(反代IP) 管理</h2>
-<div style="display:flex;gap:8px">
-<button class="btn btn-primary btn-sm" onclick="showBatchModal('proxyip')">+ 添加</button>
-<button class="btn btn-success btn-sm" onclick="batchEnable('proxyip',true)">✓ 批量启用</button>
-<button class="btn btn-warning btn-sm" onclick="batchEnable('proxyip',false)">✗ 批量禁用</button>
-<button class="btn btn-danger btn-sm" onclick="batchDelete('proxyip')">🗑️ 删除</button>
+<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+<button class="btn btn-primary btn-sm" data-icon="➕" onclick="showBatchModal('proxyip')">➕ 添加</button>
+<button class="btn btn-success btn-sm" data-icon="✓" onclick="batchEnable('proxyip',true)">✓ 批量启用</button>
+<button class="btn btn-warning btn-sm" data-icon="✗" onclick="batchEnable('proxyip',false)">✗ 批量禁用</button>
+<button class="btn btn-danger btn-sm" data-icon="🗑️" onclick="batchDelete('proxyip')">🗑️ 删除</button>
 </div>
 </div>
 <div style="background:#e8f0fe;padding:10px;border-radius:6px;margin-bottom:12px;font-size:13px;color:#1967d2">
 <strong>💡 说明：</strong>ProxyIP(反代IP) 用于普通 IP/域名代理，不支持 SOCKS5/HTTP 协议。如需添加 SOCKS5/HTTP 代理，请使用"全局出站"功能。<br>
 <strong>📊 节点数量计算：</strong>订阅节点数量 = (反代IP数量 + 全局出站数量) × 优选域名数量。<strong style="color:#f14668">不添加反代IP的话，不会生成原生节点。</strong>
 </div>
+<div id="proxyipListView">
 <table class="table"><thead><tr><th><input type="checkbox" id="proxyipCheckAll" onchange="checkAll('proxyip',this.checked)"></th><th>ID</th><th>地址</th><th>备注</th><th>状态</th><th>操作</th></tr></thead><tbody id="proxyipTable"></tbody></table>
+</div>
+<div id="proxyipCardView" class="card-grid hidden"></div>
 </div>
 
 <div id="outboundPanel" class="panel hidden">
 <div class="panel-header">
 <h2>全局出站管理</h2>
-<div style="display:flex;gap:8px;flex-wrap:wrap">
-<button id="toggleViewBtn" class="btn btn-primary btn-sm" onclick="toggleOutboundView()">📋 切换卡片</button>
-<button id="toggleMaskBtn" class="btn btn-warning btn-sm" onclick="toggleAddressMask()">👁️ 显示地址</button>
-<button class="btn btn-primary btn-sm" onclick="showBatchModal('outbound')">+ 添加</button>
-<button class="btn btn-success btn-sm" onclick="batchEnable('outbound',true)">✓ 批量启用</button>
-<button class="btn btn-warning btn-sm" onclick="batchEnable('outbound',false)">✗ 批量禁用</button>
-<button class="btn btn-success btn-sm" onclick="testAllOutbounds()">🔍 全量测速</button>
-<button class="btn btn-primary btn-sm" onclick="checkAllExits()">🌍 出站检测</button>
-<button class="btn btn-danger btn-sm" onclick="batchDelete('outbound')">🗑️ 删除</button>
+<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+<button id="toggleMaskBtn" class="btn btn-warning btn-sm" data-icon="�️" onclick="toggleAddressMask()">�️ 显示地址</button>
+<button class="btn btn-primary btn-sm" data-icon="➕" onclick="showBatchModal('outbound')">➕ 添加</button>
+<button class="btn btn-success btn-sm" data-icon="✓" onclick="batchEnable('outbound',true)">✓ 批量启用</button>
+<button class="btn btn-warning btn-sm" data-icon="✗" onclick="batchEnable('outbound',false)">✗ 批量禁用</button>
+<button class="btn btn-success btn-sm" data-icon="🔍" onclick="testAllOutbounds()">🔍 全量测速</button>
+<button class="btn btn-primary btn-sm" data-icon="🌍" onclick="checkAllExits()">🌍 出站检测</button>
+<button class="btn btn-danger btn-sm" data-icon="🗑️" onclick="batchDelete('outbound')">🗑️ 删除</button>
 </div>
 </div>
 <div style="background:#e8f0fe;padding:10px;border-radius:6px;margin-bottom:12px;font-size:13px;color:#1967d2">
@@ -202,18 +213,21 @@ Star
 <div id="cfipPanel" class="panel hidden">
 <div class="panel-header">
 <h2>CFIP(优选域名) 管理</h2>
-<div style="display:flex;gap:8px">
-<button class="btn btn-primary btn-sm" onclick="showBatchModal('cfip')">+ 添加</button>
-<button class="btn btn-success btn-sm" onclick="batchEnable('cfip',true)">✓ 批量启用</button>
-<button class="btn btn-warning btn-sm" onclick="batchEnable('cfip',false)">✗ 批量禁用</button>
-<button class="btn btn-danger btn-sm" onclick="batchDelete('cfip')">🗑️ 删除</button>
+<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+<button class="btn btn-primary btn-sm" data-icon="➕" onclick="showBatchModal('cfip')">➕ 添加</button>
+<button class="btn btn-success btn-sm" data-icon="✓" onclick="batchEnable('cfip',true)">✓ 批量启用</button>
+<button class="btn btn-warning btn-sm" data-icon="✗" onclick="batchEnable('cfip',false)">✗ 批量禁用</button>
+<button class="btn btn-danger btn-sm" data-icon="🗑️" onclick="batchDelete('cfip')">🗑️ 删除</button>
 </div>
 </div>
 <div style="background:#e8f0fe;padding:10px;border-radius:6px;margin-bottom:12px;font-size:13px;color:#1967d2">
 <strong>💡 说明：</strong>CFIP(优选域名) 用于配置 Cloudflare 优选 IP 或域名，作为节点的连接地址。<br>
 <strong>📊 节点数量计算：</strong>订阅节点数量 = (反代IP数量 + 全局出站数量) × 优选域名数量。
 </div>
+<div id="cfipListView">
 <table class="table"><thead><tr><th><input type="checkbox" id="cfipCheckAll" onchange="checkAll('cfip',this.checked)"></th><th>ID</th><th>地址</th><th>端口</th><th>备注</th><th>状态</th><th>操作</th></tr></thead><tbody id="cfipTable"></tbody></table>
+</div>
+<div id="cfipCardView" class="card-grid hidden"></div>
 </div>
 
 <div id="vlessSubscribePanel" class="panel hidden">
@@ -301,25 +315,25 @@ Star
 const API='/api';
 let apiKey=localStorage.getItem('apiKey'),modalType='',editId=null;
 let showFullAddress=false; // 是否显示完整地址
-let outboundViewMode=localStorage.getItem('outboundViewMode')||'list'; // 视图模式：list 或 card
+let globalViewMode=localStorage.getItem('globalViewMode')||'list'; // 全局视图模式：list 或 card
 
 function showLoading(){document.getElementById('loadingOverlay').classList.remove('hidden')}
 function hideLoading(){document.getElementById('loadingOverlay').classList.add('hidden')}
 
-function toggleOutboundView(){
-outboundViewMode=outboundViewMode==='list'?'card':'list';
-localStorage.setItem('outboundViewMode',outboundViewMode);
-const btn=document.getElementById('toggleViewBtn');
-if(outboundViewMode==='card'){
+function toggleGlobalView(){
+globalViewMode=globalViewMode==='list'?'card':'list';
+localStorage.setItem('globalViewMode',globalViewMode);
+const btn=document.getElementById('toggleGlobalViewBtn');
+if(globalViewMode==='card'){
 btn.textContent='📋 切换列表';
-document.getElementById('outboundListView').classList.add('hidden');
-document.getElementById('outboundCardView').classList.remove('hidden');
+btn.setAttribute('data-icon','📋');
 }else{
 btn.textContent='📋 切换卡片';
-document.getElementById('outboundListView').classList.remove('hidden');
-document.getElementById('outboundCardView').classList.add('hidden');
+btn.setAttribute('data-icon','📋');
 }
+loadProxyIPs();
 loadOutbounds();
+loadCFIPs();
 }
 
 function toggleAddressMask(){
@@ -327,10 +341,12 @@ showFullAddress=!showFullAddress;
 const btn=document.getElementById('toggleMaskBtn');
 if(showFullAddress){
 btn.textContent='🔒 隐藏地址';
+btn.setAttribute('data-icon','🔒');
 btn.classList.remove('btn-warning');
 btn.classList.add('btn-success');
 }else{
 btn.textContent='👁️ 显示地址';
+btn.setAttribute('data-icon','👁️');
 btn.classList.remove('btn-success');
 btn.classList.add('btn-warning');
 }
@@ -391,6 +407,17 @@ async function load(){
 showLoading();
 try{
 await Promise.all([loadProxyIPs(),loadOutbounds(),loadCFIPs(),loadVlessConfig(),loadSSConfig()]);
+// 更新全局视图切换按钮文本
+const btn=document.getElementById('toggleGlobalViewBtn');
+if(btn){
+if(globalViewMode==='card'){
+btn.textContent='📋 切换列表';
+btn.setAttribute('data-icon','📋');
+}else{
+btn.textContent='📋 切换卡片';
+btn.setAttribute('data-icon','📋');
+}
+}
 }finally{
 hideLoading();
 }
@@ -431,16 +458,53 @@ document.getElementById('ssResult').classList.remove('hidden');
 async function loadProxyIPs(){
 const d=await api('/proxyip');
 if(d.success){
+// 列表视图
 document.getElementById('proxyipTable').innerHTML=d.data.map(i=>\`<tr id="proxy-\${i.id}">
-<td data-label="选择"><input type="checkbox" class="proxyip-check" value="\${i.id}"></td>
-<td data-label="ID">\${i.id}</td>
-<td data-label="地址" class="addr-cell">\${i.address}</td>
-<td data-label="备注">\${i.remark||'-'}</td>
-<td data-label="状态"><label class="switch"><input type="checkbox" \${i.enabled?'checked':''} onchange="toggle('proxyip',\${i.id},this.checked)"><span class="slider"></span></label></td>
-<td data-label="操作" class="actions">
-<button class="btn btn-warning btn-sm" onclick="editItem('proxyip',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}')">编辑</button>
+<td><input type="checkbox" class="proxyip-check" value="\${i.id}"></td>
+<td>\${i.id}</td>
+<td class="addr-cell">\${i.address}</td>
+<td>\${i.remark||'-'}</td>
+<td><label class="switch"><input type="checkbox" \${i.enabled?'checked':''} onchange="toggle('proxyip',\${i.id},this.checked)"><span class="slider"></span></label></td>
+<td class="actions">
+<button class="btn btn-warning btn-sm" data-icon="✏️" onclick="editItem('proxyip',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}')">✏️ 编辑</button>
 </td></tr>\`).join('');
 document.getElementById('proxyipCheckAll').checked=false;
+
+// 卡片视图
+document.getElementById('proxyipCardView').innerHTML=d.data.map(i=>{
+const statusClass=i.enabled?'online':'offline';
+const statusText=i.enabled?'已启用':'已禁用';
+return \`<div class="outbound-card \${statusClass}" id="proxyip-card-\${i.id}">
+<input type="checkbox" class="card-checkbox proxyip-check" value="\${i.id}">
+<div class="card-header">
+<div style="flex:1;padding-right:30px;min-width:0;overflow:hidden">
+<div class="card-title">\${i.remark||'ProxyIP-'+i.id}</div>
+</div>
+</div>
+<div class="card-info">
+<div class="card-info-row">
+<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">\${i.address}</span>
+</div>
+</div>
+<div class="card-actions">
+<div style="flex:1"></div>
+<span onclick="editItem('proxyip',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}')" style="color:#667eea;cursor:pointer;font-size:13px;user-select:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">✏️ 编辑</span>
+<label class="switch" style="margin:0;margin-left:12px">
+<input type="checkbox" \${i.enabled?'checked':''} onchange="toggle('proxyip',\${i.id},this.checked)">
+<span class="slider"></span>
+</label>
+</div>
+</div>\`;
+}).join('');
+
+// 根据当前视图模式显示对应的视图
+if(globalViewMode==='card'){
+document.getElementById('proxyipListView').classList.add('hidden');
+document.getElementById('proxyipCardView').classList.remove('hidden');
+}else{
+document.getElementById('proxyipListView').classList.remove('hidden');
+document.getElementById('proxyipCardView').classList.add('hidden');
+}
 }
 }
 
@@ -469,8 +533,8 @@ return \`<tr id="outbound-\${i.id}">
 <td data-label="延迟" id="out-lat-\${i.id}" style="color:#999">-</td>
 <td data-label="状态"><label class="switch"><input type="checkbox" \${i.enabled?'checked':''} onchange="toggle('outbound',\${i.id},this.checked)"><span class="slider"></span></label></td>
 <td data-label="操作" class="actions">
-<button class="btn btn-success btn-sm" onclick="testSingleOutbound(\${i.id})">测速</button>
-<button class="btn btn-warning btn-sm" onclick="editItem('outbound',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}')">编辑</button>
+<button class="btn btn-success btn-sm" data-icon="⚡" onclick="testSingleOutbound(\${i.id})">⚡ 测速</button>
+<button class="btn btn-warning btn-sm" data-icon="✏️" onclick="editItem('outbound',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}')">✏️ 编辑</button>
 </td></tr>\`;
 }).join('');
 document.getElementById('outboundCheckAll').checked=false;
@@ -490,46 +554,38 @@ const statusText=i.enabled?'已启用':'已禁用';
 return \`<div class="outbound-card \${statusClass}" id="outbound-card-\${i.id}">
 <input type="checkbox" class="card-checkbox outbound-check" value="\${i.id}">
 <div class="card-header">
-<div style="flex:1;padding-right:30px">
+<div style="flex:1;padding-right:30px;min-width:0;overflow:hidden">
 <div class="card-title">\${i.remark||'节点-'+i.id}</div>
-<div class="card-status">
-<span class="status-dot \${statusClass}"></span>
-<span>\${statusText}</span>
-<span class="badge badge-info" style="margin-left:4px">\${i.type}</span>
-</div>
 </div>
 </div>
 <div class="card-info">
 <div class="card-info-row">
-<span>地址:</span>
-<span style="word-break:break-all;text-align:right">\${maskAddress(i.address)}</span>
+<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">\${maskAddress(i.address)}</span>
 </div>
 <div class="card-info-row">
-<span>出站:</span>
-<span id="exit-card-\${i.id}" class="exit-link" onclick="showExitDetail(\${i.id})" title="点击查看详情">\${exitInfo}</span>
+<span id="exit-card-\${i.id}" class="exit-link" onclick="showExitDetail(\${i.id})" title="点击查看详情" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0">\${exitInfo}</span>
 </div>
 </div>
-<div class="card-latency unknown" id="out-lat-card-\${i.id}">未测速</div>
-<div class="card-actions">
-<button class="btn btn-success btn-sm" onclick="testSingleOutbound(\${i.id})">测速</button>
-<button class="btn btn-warning btn-sm" onclick="editItem('outbound',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}')">编辑</button>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+<div class="card-latency unknown" id="out-lat-card-\${i.id}" onclick="testSingleOutbound(\${i.id})" style="margin:0;font-size:24px;cursor:pointer;user-select:none;line-height:1" title="点击测速">⚡</div>
+<div style="display:flex;gap:12px;align-items:center">
+<span onclick="editItem('outbound',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}')" style="color:#667eea;cursor:pointer;font-size:13px;user-select:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">✏️ 编辑</span>
 <label class="switch" style="margin:0">
 <input type="checkbox" \${i.enabled?'checked':''} onchange="toggle('outbound',\${i.id},this.checked)">
 <span class="slider"></span>
 </label>
 </div>
+</div>
 </div>\`;
 }).join('');
 
 // 根据当前视图模式显示对应的视图
-if(outboundViewMode==='card'){
+if(globalViewMode==='card'){
 document.getElementById('outboundListView').classList.add('hidden');
 document.getElementById('outboundCardView').classList.remove('hidden');
-document.getElementById('toggleViewBtn').textContent='📋 切换列表';
 }else{
 document.getElementById('outboundListView').classList.remove('hidden');
 document.getElementById('outboundCardView').classList.add('hidden');
-document.getElementById('toggleViewBtn').textContent='📋 切换卡片';
 }
 }
 }
@@ -537,17 +593,54 @@ document.getElementById('toggleViewBtn').textContent='📋 切换卡片';
 async function loadCFIPs(){
 const d=await api('/cfip');
 if(d.success){
+// 列表视图
 document.getElementById('cfipTable').innerHTML=d.data.map(i=>\`<tr>
-<td data-label="选择"><input type="checkbox" class="cfip-check" value="\${i.id}"></td>
-<td data-label="ID">\${i.id}</td>
-<td data-label="地址">\${i.address}</td>
-<td data-label="端口">\${i.port}</td>
-<td data-label="备注">\${i.remark||'-'}</td>
-<td data-label="状态"><label class="switch"><input type="checkbox" \${i.enabled?'checked':''} onchange="toggle('cfip',\${i.id},this.checked)"><span class="slider"></span></label></td>
-<td data-label="操作" class="actions">
-<button class="btn btn-warning btn-sm" onclick="editItem('cfip',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}',\${i.port})">编辑</button>
+<td><input type="checkbox" class="cfip-check" value="\${i.id}"></td>
+<td>\${i.id}</td>
+<td>\${i.address}</td>
+<td>\${i.port}</td>
+<td>\${i.remark||'-'}</td>
+<td><label class="switch"><input type="checkbox" \${i.enabled?'checked':''} onchange="toggle('cfip',\${i.id},this.checked)"><span class="slider"></span></label></td>
+<td class="actions">
+<button class="btn btn-warning btn-sm" data-icon="✏️" onclick="editItem('cfip',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}',\${i.port})">✏️ 编辑</button>
 </td></tr>\`).join('');
 document.getElementById('cfipCheckAll').checked=false;
+
+// 卡片视图
+document.getElementById('cfipCardView').innerHTML=d.data.map(i=>{
+const statusClass=i.enabled?'online':'offline';
+const statusText=i.enabled?'已启用':'已禁用';
+return \`<div class="outbound-card \${statusClass}" id="cfip-card-\${i.id}">
+<input type="checkbox" class="card-checkbox cfip-check" value="\${i.id}">
+<div class="card-header">
+<div style="flex:1;padding-right:30px;min-width:0;overflow:hidden">
+<div class="card-title">\${i.remark||'CFIP-'+i.id}</div>
+</div>
+</div>
+<div class="card-info">
+<div class="card-info-row">
+<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">\${i.address}:\${i.port}</span>
+</div>
+</div>
+<div class="card-actions">
+<div style="flex:1"></div>
+<span onclick="editItem('cfip',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}',\${i.port})" style="color:#667eea;cursor:pointer;font-size:13px;user-select:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">✏️ 编辑</span>
+<label class="switch" style="margin:0;margin-left:12px">
+<input type="checkbox" \${i.enabled?'checked':''} onchange="toggle('cfip',\${i.id},this.checked)">
+<span class="slider"></span>
+</label>
+</div>
+</div>\`;
+}).join('');
+
+// 根据当前视图模式显示对应的视图
+if(globalViewMode==='card'){
+document.getElementById('cfipListView').classList.add('hidden');
+document.getElementById('cfipCardView').classList.remove('hidden');
+}else{
+document.getElementById('cfipListView').classList.remove('hidden');
+document.getElementById('cfipCardView').classList.add('hidden');
+}
 }
 }
 
@@ -636,6 +729,7 @@ latCell.style.color='#667eea';
 if(latCardCell){
 latCardCell.innerHTML='<span style="display:inline-block;width:16px;height:16px;border:3px solid #667eea;border-top:3px solid transparent;border-radius:50%;animation:spin 0.6s linear infinite"></span>';
 latCardCell.className='card-latency unknown';
+latCardCell.style.cursor='pointer';
 }
 
 try{
@@ -655,6 +749,8 @@ latCell.style.color=color;
 if(latCardCell){
 latCardCell.textContent=latency+'ms';
 latCardCell.className='card-latency '+cardClass;
+latCardCell.style.cursor='pointer';
+latCardCell.title='点击重新测速';
 }
 // 更新卡片边框颜色为绿色（通）
 if(card){
@@ -671,6 +767,8 @@ latCell.title=result.error||'连接失败';
 if(latCardCell){
 latCardCell.textContent='离线';
 latCardCell.className='card-latency bad';
+latCardCell.style.cursor='pointer';
+latCardCell.title='点击重新测速';
 }
 // 更新卡片边框颜色为红色（不通）
 if(card){
@@ -685,6 +783,8 @@ latCell.style.color='#f14668';
 if(latCardCell){
 latCardCell.textContent='失败';
 latCardCell.className='card-latency bad';
+latCardCell.style.cursor='pointer';
+latCardCell.title='点击重新测速';
 }
 // 更新卡片边框颜色为红色（不通）
 if(card){
@@ -699,6 +799,8 @@ latCell.style.color='#f14668';
 if(latCardCell){
 latCardCell.textContent='错误';
 latCardCell.className='card-latency bad';
+latCardCell.style.cursor='pointer';
+latCardCell.title='点击重新测速';
 }
 // 更新卡片边框颜色为红色（不通）
 if(card){
