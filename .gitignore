@@ -17,3 +17,7 @@ dist/
 
 # 日志文件
 *.log
+
+CHANGELOG.md
+测试指南.md
+订阅参数使用示例.md

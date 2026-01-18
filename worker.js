@@ -237,6 +237,17 @@ Star
 <h2 style="margin-bottom:16px">VLESS 订阅生成</h2>
 <div id="vlessAlert"></div>
 
+<div style="background:#fff3cd;border-left:4px solid #ffc107;padding:12px;border-radius:6px;margin-bottom:16px;font-size:13px;color:#856404">
+<strong>💡 高级用法：指定ID生成订阅</strong><br>
+在订阅URL后添加参数可以生成指定节点的订阅：<br>
+• <code>?proxyip=1,2,3</code> - 指定ProxyIP的ID（多个用逗号分隔）<br>
+• <code>?outbound=1,2</code> - 指定全局出站的ID<br>
+• <code>?cfip=1,2,3</code> - 指定CFIP的ID<br>
+• <code>?proxyip=1&outbound=2&cfip=1,2</code> - 组合使用<br>
+<strong style="color:#d9534f">⚠️ 指定ID时不检查启用状态</strong>，即使被禁用也会包含在订阅中。<br><br>
+<strong>🎯 主要用途：</strong>为单个全局出站（落地）生成独立订阅源，配合客户端的<strong>自动选择最低延迟</strong>功能，实现同一落地的多入口自动优选。例如：一个美国落地配置多个优选域名/IP，客户端自动选择延迟最低的入口，保证落地一致性。
+</div>
+
 <div class="form-group"><label>UUID</label><input type="text" id="vlessUuidInput" placeholder="12cbf86b-22bb-45b6-aadb-cb622a538d6a"></div>
 <div class="form-group"><label>Snippets/Worker 域名</label><input type="text" id="vlessDomainInput" placeholder="your-worker.workers.dev"></div>
 <div class="form-group"><label>Path</label><input type="text" id="vlessPathInput" placeholder="/?ed=2560"></div>
@@ -246,12 +257,30 @@ Star
 <div id="vlessResult" class="result-box hidden">
 <p><b>订阅地址:</b></p><pre id="vlessSubUrl"></pre><button class="btn btn-success btn-sm" onclick="copy('vlessSubUrl')">复制</button>
 <p style="margin-top:12px"><b>Clash 订阅地址:</b></p><pre id="vlessClashUrl"></pre><button class="btn btn-success btn-sm" onclick="copy('vlessClashUrl')">复制</button>
+<div style="margin-top:16px;padding:12px;background:#f7f9fc;border-radius:6px;font-size:12px;color:#666">
+<strong>📋 高级用法示例：</strong><br>
+<code style="display:block;margin:6px 0;padding:6px;background:#fff;border-radius:4px;word-break:break-all">订阅地址?proxyip=1,2,3</code>
+<span style="color:#999">→ 只使用ID为1、2、3的ProxyIP × 所有启用的CFIP</span><br>
+<code style="display:block;margin:6px 0;padding:6px;background:#fff;border-radius:4px;word-break:break-all">订阅地址?outbound=1&cfip=1,2,3</code>
+<span style="color:#999">→ 只使用ID为1的全局出站 × ID为1、2、3的CFIP（适合单落地多入口优选）</span>
+</div>
 </div>
 </div>
 
 <div id="ssSubscribePanel" class="panel hidden">
 <h2 style="margin-bottom:16px">Shadowsocks 订阅生成</h2>
 <div id="ssAlert"></div>
+
+<div style="background:#fff3cd;border-left:4px solid #ffc107;padding:12px;border-radius:6px;margin-bottom:16px;font-size:13px;color:#856404">
+<strong>💡 高级用法：指定ID生成订阅</strong><br>
+在订阅URL后添加参数可以生成指定节点的订阅：<br>
+• <code>?proxyip=1,2,3</code> - 指定ProxyIP的ID（多个用逗号分隔）<br>
+• <code>?outbound=1,2</code> - 指定全局出站的ID<br>
+• <code>?cfip=1,2,3</code> - 指定CFIP的ID<br>
+• <code>?proxyip=1&outbound=2&cfip=1,2</code> - 组合使用<br>
+<strong style="color:#d9534f">⚠️ 指定ID时不检查启用状态</strong>，即使被禁用也会包含在订阅中。<br><br>
+<strong>🎯 主要用途：</strong>为单个全局出站（落地）生成独立订阅源，配合客户端的<strong>自动选择最低延迟</strong>功能，实现同一落地的多入口自动优选。例如：一个美国落地配置多个优选域名/IP，客户端自动选择延迟最低的入口，保证落地一致性。
+</div>
 
 <div class="form-group"><label>密码 (Password)</label><input type="text" id="ssPasswordInput" placeholder="your-password"></div>
 <div class="form-group"><label>Snippets/Worker 域名</label><input type="text" id="ssDomainInput" placeholder="your-worker.workers.dev"></div>
@@ -262,6 +291,13 @@ Star
 <div id="ssResult" class="result-box hidden">
 <p><b>订阅地址:</b></p><pre id="ssSubUrl"></pre><button class="btn btn-success btn-sm" onclick="copy('ssSubUrl')">复制</button>
 <p style="margin-top:12px"><b>Clash 订阅地址:</b></p><pre id="ssClashUrl"></pre><button class="btn btn-success btn-sm" onclick="copy('ssClashUrl')">复制</button>
+<div style="margin-top:16px;padding:12px;background:#f7f9fc;border-radius:6px;font-size:12px;color:#666">
+<strong>📋 高级用法示例：</strong><br>
+<code style="display:block;margin:6px 0;padding:6px;background:#fff;border-radius:4px;word-break:break-all">订阅地址?proxyip=1,2,3</code>
+<span style="color:#999">→ 只使用ID为1、2、3的ProxyIP × 所有启用的CFIP</span><br>
+<code style="display:block;margin:6px 0;padding:6px;background:#fff;border-radius:4px;word-break:break-all">订阅地址?outbound=1&cfip=1,2,3</code>
+<span style="color:#999">→ 只使用ID为1的全局出站 × ID为1、2、3的CFIP（适合单落地多入口优选）</span>
+</div>
 </div>
 </div>
 </div>
@@ -1643,10 +1679,10 @@ export default {
             const parts = path.split('/');
             if (parts[2] === 'ss' && parts[3]) {
                 // SS 订阅: /sub/ss/password
-                return handleSSSubscribe(env.DB, parts[3]);
+                return handleSSSubscribe(env.DB, parts[3], request.url);
             } else if (parts[2]) {
                 // VLESS 订阅: /sub/uuid
-                return handleSubscribe(env.DB, parts[2]);
+                return handleSubscribe(env.DB, parts[2], request.url);
             }
         }
 
@@ -1990,15 +2026,56 @@ async function handleGenerateSSSubscribe(request, db) {
 }
 
 // 公开订阅
-async function handleSubscribe(db, uuid) {
+async function handleSubscribe(db, uuid, url) {
     const config = await db.prepare('SELECT * FROM subscribe_config WHERE id = 1').first();
     if (!config || uuid !== config.uuid) return new Response('Not Found', { status: 404 });
 
-    const { results: cfips } = await db.prepare('SELECT * FROM cf_ips WHERE enabled = 1 ORDER BY sort_order, id').all();
+    // 解析URL参数
+    const urlParams = new URL(url).searchParams;
+    const proxyipIds = urlParams.get('proxyip')?.split(',').filter(id => id.trim()) || [];
+    const outboundIds = urlParams.get('outbound')?.split(',').filter(id => id.trim()) || [];
+    const cfipIds = urlParams.get('cfip')?.split(',').filter(id => id.trim()) || [];
+
+    // 获取CFIP列表
+    let cfips = [];
+    if (cfipIds.length > 0) {
+        // 指定了CFIP ID，获取指定的CFIP（不管启用状态）
+        const placeholders = cfipIds.map(() => '?').join(',');
+        const { results } = await db.prepare(`SELECT * FROM cf_ips WHERE id IN (${placeholders}) ORDER BY sort_order, id`).bind(...cfipIds).all();
+        cfips = results;
+    } else {
+        // 未指定CFIP ID，获取所有启用的CFIP
+        const { results } = await db.prepare('SELECT * FROM cf_ips WHERE enabled = 1 ORDER BY sort_order, id').all();
+        cfips = results;
+    }
+    
     if (cfips.length === 0) return new Response('No CFIP', { status: 404 });
 
-    const { results: proxyips } = await db.prepare('SELECT * FROM proxy_ips WHERE enabled = 1 ORDER BY sort_order, id').all();
-    const { results: outbounds } = await db.prepare('SELECT * FROM outbounds WHERE enabled = 1 ORDER BY sort_order, id').all();
+    // 获取ProxyIP和Outbound列表
+    let proxyips = [];
+    let outbounds = [];
+    
+    if (proxyipIds.length > 0) {
+        // 指定了ProxyIP ID，获取指定的ProxyIP（不管启用状态）
+        const placeholders = proxyipIds.map(() => '?').join(',');
+        const { results } = await db.prepare(`SELECT * FROM proxy_ips WHERE id IN (${placeholders}) ORDER BY sort_order, id`).bind(...proxyipIds).all();
+        proxyips = results;
+    } else if (outboundIds.length === 0) {
+        // 未指定任何ID，获取所有启用的ProxyIP
+        const { results } = await db.prepare('SELECT * FROM proxy_ips WHERE enabled = 1 ORDER BY sort_order, id').all();
+        proxyips = results;
+    }
+    
+    if (outboundIds.length > 0) {
+        // 指定了Outbound ID，获取指定的Outbound（不管启用状态）
+        const placeholders = outboundIds.map(() => '?').join(',');
+        const { results } = await db.prepare(`SELECT * FROM outbounds WHERE id IN (${placeholders}) ORDER BY sort_order, id`).bind(...outboundIds).all();
+        outbounds = results;
+    } else if (proxyipIds.length === 0) {
+        // 未指定任何ID，获取所有启用的Outbound
+        const { results } = await db.prepare('SELECT * FROM outbounds WHERE enabled = 1 ORDER BY sort_order, id').all();
+        outbounds = results;
+    }
 
     const proxyPath = config.proxy_path || '/?ed=2560';
     
@@ -2037,15 +2114,56 @@ async function handleSubscribe(db, uuid) {
 }
 
 // SS 公开订阅
-async function handleSSSubscribe(db, password) {
+async function handleSSSubscribe(db, password, url) {
     const config = await db.prepare('SELECT * FROM subscribe_config WHERE id = 2').first();
     if (!config || password !== config.uuid) return new Response('Not Found', { status: 404 });
 
-    const { results: cfips } = await db.prepare('SELECT * FROM cf_ips WHERE enabled = 1 ORDER BY sort_order, id').all();
+    // 解析URL参数
+    const urlParams = new URL(url).searchParams;
+    const proxyipIds = urlParams.get('proxyip')?.split(',').filter(id => id.trim()) || [];
+    const outboundIds = urlParams.get('outbound')?.split(',').filter(id => id.trim()) || [];
+    const cfipIds = urlParams.get('cfip')?.split(',').filter(id => id.trim()) || [];
+
+    // 获取CFIP列表
+    let cfips = [];
+    if (cfipIds.length > 0) {
+        // 指定了CFIP ID，获取指定的CFIP（不管启用状态）
+        const placeholders = cfipIds.map(() => '?').join(',');
+        const { results } = await db.prepare(`SELECT * FROM cf_ips WHERE id IN (${placeholders}) ORDER BY sort_order, id`).bind(...cfipIds).all();
+        cfips = results;
+    } else {
+        // 未指定CFIP ID，获取所有启用的CFIP
+        const { results } = await db.prepare('SELECT * FROM cf_ips WHERE enabled = 1 ORDER BY sort_order, id').all();
+        cfips = results;
+    }
+    
     if (cfips.length === 0) return new Response('No CFIP', { status: 404 });
 
-    const { results: proxyips } = await db.prepare('SELECT * FROM proxy_ips WHERE enabled = 1 ORDER BY sort_order, id').all();
-    const { results: outbounds } = await db.prepare('SELECT * FROM outbounds WHERE enabled = 1 ORDER BY sort_order, id').all();
+    // 获取ProxyIP和Outbound列表
+    let proxyips = [];
+    let outbounds = [];
+    
+    if (proxyipIds.length > 0) {
+        // 指定了ProxyIP ID，获取指定的ProxyIP（不管启用状态）
+        const placeholders = proxyipIds.map(() => '?').join(',');
+        const { results } = await db.prepare(`SELECT * FROM proxy_ips WHERE id IN (${placeholders}) ORDER BY sort_order, id`).bind(...proxyipIds).all();
+        proxyips = results;
+    } else if (outboundIds.length === 0) {
+        // 未指定任何ID，获取所有启用的ProxyIP
+        const { results } = await db.prepare('SELECT * FROM proxy_ips WHERE enabled = 1 ORDER BY sort_order, id').all();
+        proxyips = results;
+    }
+    
+    if (outboundIds.length > 0) {
+        // 指定了Outbound ID，获取指定的Outbound（不管启用状态）
+        const placeholders = outboundIds.map(() => '?').join(',');
+        const { results } = await db.prepare(`SELECT * FROM outbounds WHERE id IN (${placeholders}) ORDER BY sort_order, id`).bind(...outboundIds).all();
+        outbounds = results;
+    } else if (proxyipIds.length === 0) {
+        // 未指定任何ID，获取所有启用的Outbound
+        const { results } = await db.prepare('SELECT * FROM outbounds WHERE enabled = 1 ORDER BY sort_order, id').all();
+        outbounds = results;
+    }
 
     const proxyPath = config.proxy_path || '/';
     const method = 'none';
