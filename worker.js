@@ -1736,6 +1736,15 @@ export default {
             return json({ error: 'Invalid Internal Key' }, 401);
         }
 
+        // Telegram优选IP导入 - 使用 env.API_KEY 直接验证
+        if (path === '/api/telegram/import-cfip' && method === 'POST') {
+            const telegramApiKey = request.headers.get('X-API-Key');
+            if (!telegramApiKey || telegramApiKey !== env.API_KEY) {
+                return json({ error: 'Invalid API Key' }, 401);
+            }
+            return handleTelegramImportCFIP(request, env.DB);
+        }
+
         // 需要认证的 API
         const apiKey = request.headers.get('X-API-Key') || url.searchParams.get('apikey');
         if (!apiKey) return json({ error: 'Missing API Key' }, 401);
@@ -1805,11 +1814,6 @@ export default {
         // 出站检测
         if (path === '/api/check-exit' && method === 'POST') {
             return handleCheckExit(request, env.DB);
-        }
-
-        // Telegram优选IP导入
-        if (path === '/api/telegram/import-cfip' && method === 'POST') {
-            return handleTelegramImportCFIP(request, env.DB);
         }
 
         return json({ error: 'Not Found' }, 404);
@@ -2979,12 +2983,7 @@ async function handleTestOutbound(request, db) {
 // Telegram优选IP导入接口
 async function handleTelegramImportCFIP(request, db) {
     try {
-        const { address, port = 443, remark, apiKey } = await request.json();
-        
-        // 验证API Key
-        if (!apiKey || apiKey !== request.headers.get('X-API-Key')) {
-            return json({ error: 'Invalid API Key' }, 401);
-        }
+        const { address, port = 443, remark } = await request.json();
         
         // 验证必填字段
         if (!address) {
