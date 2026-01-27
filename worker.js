@@ -167,6 +167,7 @@ Star
 <button class="tab" onclick="switchTab('cfip',this)">CFIP(优选域名)</button>
 <button class="tab" onclick="switchTab('vlessSubscribe',this)">订阅生成VLESS</button>
 <button class="tab" onclick="switchTab('ssSubscribe',this)">订阅生成SS</button>
+<button class="tab" onclick="switchTab('argo',this)">ARGO优选</button>
 </div>
 
 <div id="proxyipPanel" class="panel">
@@ -304,6 +305,43 @@ Star
 </div>
 </div>
 </div>
+</div>
+
+<div id="argoPanel" class="panel hidden">
+<div class="panel-header">
+<h2>ARGO 优选订阅管理</h2>
+<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+<button class="btn btn-primary btn-sm" data-icon="➕" onclick="showBatchModal('argo')">➕ 添加</button>
+<button class="btn btn-success btn-sm" data-icon="✓" onclick="batchEnable('argo',true)">✓ 启用</button>
+<button class="btn btn-warning btn-sm" data-icon="✗" onclick="batchEnable('argo',false)">✗ 禁用</button>
+<button class="btn btn-danger btn-sm" data-icon="🗑️" onclick="batchDelete('argo')">🗑️ 删除</button>
+</div>
+</div>
+
+<div style="background:#e8f0fe;padding:10px;border-radius:6px;margin-bottom:12px;font-size:13px;color:#1967d2">
+<strong>💡 说明：</strong>ARGO 优选订阅用于管理 VLESS/VMess 模板链接，系统会自动将模板中的"优选域名/IP:端口"替换为所有启用的 CFIP，生成多个优化节点。<br>
+<strong>📋 支持格式：</strong>VLESS 和 VMess 两种协议<br>
+<strong>📊 节点数量：</strong>每个模板会生成 N 个节点（N = 启用的 CFIP 数量）
+</div>
+
+<div id="argoListView">
+<table class="table">
+<thead>
+<tr>
+<th><input type="checkbox" id="argoCheckAll" onchange="checkAll('argo',this.checked)"></th>
+<th>ID</th>
+<th>备注</th>
+<th>模板链接</th>
+<th>订阅地址</th>
+<th>状态</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody id="argoTable"></tbody>
+</table>
+</div>
+
+<div id="argoCardView" class="card-grid hidden"></div>
 </div>
 
 <div id="addModal" class="modal hidden">
@@ -449,7 +487,7 @@ return(await fetch(API+path,opt)).json();
 async function load(){
 showLoading();
 try{
-await Promise.all([loadProxyIPs(),loadOutbounds(),loadCFIPs(),loadVlessConfig(),loadSSConfig()]);
+await Promise.all([loadProxyIPs(),loadOutbounds(),loadCFIPs(),loadVlessConfig(),loadSSConfig(),loadArgoSubscribes()]);
 // 更新全局视图切换按钮文本
 const btn=document.getElementById('toggleGlobalViewBtn');
 if(btn){
@@ -498,6 +536,80 @@ document.getElementById('ssSubUrl').textContent=subUrl;
 document.getElementById('ssResult').classList.remove('hidden');
 }
 }
+}
+
+async function loadArgoSubscribes(){
+const d=await api('/argo');
+if(!d.success)return;
+
+const tbody=document.getElementById('argoTable');
+tbody.innerHTML='';
+
+for(const item of d.data){
+const subUrl=\`\${location.origin}/sub/argo/\${item.token}\`;
+const row=\`
+<tr>
+<td><input type="checkbox" class="argo-check" value="\${item.id}"></td>
+<td>\${item.id}</td>
+<td>\${item.remark||'-'}</td>
+<td style="max-width:300px;word-break:break-all;font-size:11px">\${item.template_link}</td>
+<td>
+<div style="display:flex;gap:6px;align-items:center">
+<code style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis">\${subUrl}</code>
+<button class="btn btn-success btn-sm" onclick="copyText('\${subUrl}')">📋 复制</button>
+</div>
+</td>
+<td>
+<label class="switch">
+<input type="checkbox" \${item.enabled?'checked':''} onchange="toggleArgoEnable(\${item.id},this.checked)">
+<span class="slider"></span>
+</label>
+</td>
+<td>
+<div class="actions">
+<button class="btn btn-primary btn-sm" onclick="editArgo(\${item.id})">编辑</button>
+<button class="btn btn-danger btn-sm" onclick="deleteArgo(\${item.id})">删除</button>
+</div>
+</td>
+</tr>
+\`;
+tbody.innerHTML+=row;
+}
+
+document.getElementById('argoCheckAll').checked=false;
+}
+
+function copyText(text){
+navigator.clipboard.writeText(text).then(()=>{
+alert('✅ 已复制到剪贴板');
+}).catch(err=>{
+alert('❌ 复制失败：'+err.message);
+});
+}
+
+async function toggleArgoEnable(id,enabled){
+await api('/argo/'+id,'PUT',{enabled:enabled?1:0});
+loadArgoSubscribes();
+}
+
+async function editArgo(id){
+const item=await api('/argo');
+const argo=item.data.find(i=>i.id===id);
+if(!argo)return;
+
+const newTemplate=prompt('修改模板链接：',argo.template_link);
+if(!newTemplate)return;
+
+const newRemark=prompt('修改备注：',argo.remark||'');
+
+await api('/argo/'+id,'PUT',{template_link:newTemplate,remark:newRemark,enabled:argo.enabled});
+loadArgoSubscribes();
+}
+
+async function deleteArgo(id){
+if(!confirm('确定删除该ARGO订阅吗？'))return;
+await api('/argo/'+id,'DELETE');
+loadArgoSubscribes();
 }
 
 async function loadProxyIPs(){
@@ -1303,14 +1415,14 @@ exitCardCell.className='';
 }
 
 function checkAll(type,checked){
-const className=type==='proxyip'?'proxyip-check':type==='outbound'?'outbound-check':'cfip-check';
+const className=type==='proxyip'?'proxyip-check':type==='outbound'?'outbound-check':type==='argo'?'argo-check':'cfip-check';
 document.querySelectorAll('.'+className).forEach(cb=>cb.checked=checked);
 }
 
 let batchType='';
 function showBatchModal(type){
 batchType=type;
-const titles={'proxyip':'ProxyIP(反代IP)','outbound':'全局出站','cfip':'CFIP(优选域名)'};
+const titles={'proxyip':'ProxyIP(反代IP)','outbound':'全局出站','cfip':'CFIP(优选域名)','argo':'ARGO 订阅'};
 document.getElementById('batchModalTitle').textContent='批量添加 '+titles[type];
 document.getElementById('batchInput').value='';
 document.getElementById('batchAlert').innerHTML='';
@@ -1318,6 +1430,8 @@ if(type==='proxyip'){
 document.getElementById('batchHelp').innerHTML='<b>格式说明：</b>每行一条，支持以下格式：<br>• IP/域名#备注<br>备注可选，没有备注则自动生成';
 }else if(type==='outbound'){
 document.getElementById('batchHelp').innerHTML='<b>格式说明：</b>每行一条，支持以下格式：<br>• socks5://host:port#备注<br>• socks5://user:pass@host:port#备注<br>• http://host:port#备注<br>• http://user:pass@host:port#备注<br>备注可选，没有备注则自动生成';
+}else if(type==='argo'){
+document.getElementById('batchHelp').innerHTML='<b>格式说明：</b>每行一条 VLESS 或 VMess 模板链接<br><b>VLESS示例：</b><br><code>vless://12345678@example.com:443?encryption=none&security=tls&sni=argo.example.com&fp=firefox&type=ws&host=argo.example.com&path=%2Fvless-argo%3Fed%3D2560#美国节点</code><br><b>VMess示例：</b><br><code>vmess://eyAidiI6ICIyIiwgInBzIjogIkFsdGFyZV9TRy1WdWx0ciIsICJhZGQiOiAiY25hbWUuanZ2di5kZSIsICJwb3J0IjogIjQ0MyIsICJpZCI6ICI1ZWZkMDQyMC1lM2MzLTQ1ZjMtYTMyNS00NmRlOTY1MjFhMzYiLCAiYWlkIjogIjAiLCAic2N5IjogIm5vbmUiLCAibmV0IjogIndzIiwgInR5cGUiOiAibm9uZSIsICJob3N0IjogInNlcnZlcjEubGVub2FzLmRlIiwgInBhdGgiOiAiL3ZtZXNzLWFyZ28/ZWQ9MjU2MCIsICJ0bHMiOiAidGxzIiwgInNuaSI6ICJzZXJ2ZXIxLmxlbm9hcy5kZSIsICJhbHBuIjogIiIsICJmcCI6ICJjaHJvbWUifQo=</code>';
 }else{
 document.getElementById('batchHelp').innerHTML='<b>格式说明：</b>每行一条，格式为：<br>• IP/域名:端口#备注<br>• IP/域名#备注（端口默认443）<br>备注可选，没有备注则自动生成';
 }
@@ -1332,19 +1446,21 @@ batchType='';
 async function exportData(){
 showLoading();
 try{
-const [proxyips,outbounds,cfips,vlessConfig,ssConfig]=await Promise.all([
+const [proxyips,outbounds,cfips,argo,vlessConfig,ssConfig]=await Promise.all([
 api('/proxyip'),
 api('/outbound'),
 api('/cfip'),
+api('/argo'),
 api('/subscribe/vless/config'),
 api('/subscribe/ss/config')
 ]);
 const exportData={
-version:'1.0',
+version:'1.1',
 timestamp:new Date().toISOString(),
 proxyips:proxyips.success?proxyips.data:[],
 outbounds:outbounds.success?outbounds.data:[],
 cfips:cfips.success?cfips.data:[],
+argo:argo.success?argo.data:[],
 vlessConfig:vlessConfig.success?vlessConfig.data:{},
 ssConfig:ssConfig.success?ssConfig.data:{}
 };
@@ -1422,10 +1538,11 @@ showLoading();
 try{
 if(mode==='replace'){
 // 完全覆盖模式：先删除所有现有数据
-const [existingProxyips,existingOutbounds,existingCfips]=await Promise.all([
+const [existingProxyips,existingOutbounds,existingCfips,existingArgo]=await Promise.all([
 api('/proxyip'),
 api('/outbound'),
-api('/cfip')
+api('/cfip'),
+api('/argo')
 ]);
 
 const deletePromises=[];
@@ -1438,6 +1555,9 @@ deletePromises.push(...existingOutbounds.data.map(item=>api('/outbound/'+item.id
 if(existingCfips.success){
 deletePromises.push(...existingCfips.data.map(item=>api('/cfip/'+item.id,'DELETE')));
 }
+if(existingArgo.success){
+deletePromises.push(...existingArgo.data.map(item=>api('/argo/'+item.id,'DELETE')));
+}
 await Promise.all(deletePromises);
 }
 
@@ -1445,7 +1565,8 @@ await Promise.all(deletePromises);
 const results=await Promise.all([
 ...data.proxyips.map(item=>api('/proxyip','POST',{address:item.address,remark:item.remark,enabled:item.enabled})),
 ...data.outbounds.map(item=>api('/outbound','POST',{address:item.address,remark:item.remark,enabled:item.enabled})),
-...data.cfips.map(item=>api('/cfip','POST',{address:item.address,port:item.port,remark:item.remark,enabled:item.enabled}))
+...data.cfips.map(item=>api('/cfip','POST',{address:item.address,port:item.port,remark:item.remark,enabled:item.enabled})),
+...(data.argo||[]).map(item=>api('/argo','POST',{template_link:item.template_link,remark:item.remark,enabled:item.enabled}))
 ]);
 
 // 更新 VLESS 配置
@@ -1506,6 +1627,26 @@ const remark=parts[1]?parts[1].trim():'';
 if(!address)throw new Error('地址不能为空');
 if(!address.startsWith('socks')&&!address.startsWith('http'))throw new Error('必须是 socks5:// 或 http:// 格式');
 items.push({address,remark:remark||undefined});
+}else if(batchType==='argo'){
+// ARGO 格式：vless://... 或 vmess://...
+const remarkMatch=line.match(/#(.+)$/);
+let remark='';
+if(line.startsWith('vless://')){
+remark=remarkMatch?decodeURIComponent(remarkMatch[1]):'';
+}else if(line.startsWith('vmess://')){
+// VMess格式，从base64解码中提取备注
+try{
+const base64Data=line.substring(8);
+const jsonStr=atob(base64Data);
+const vmessConfig=JSON.parse(jsonStr);
+remark=vmessConfig.ps||'';
+}catch(e){
+remark='';
+}
+}else{
+throw new Error('必须是 vless:// 或 vmess:// 格式');
+}
+items.push({template_link:line,remark:remark||undefined});
 }else{
 // CFIP 格式：地址:端口#备注
 const parts=line.split('#');
@@ -1549,6 +1690,7 @@ hideLoading();
 document.getElementById('batchAlert').innerHTML=\`<div class="alert alert-success">成功添加 \${success} 条\${failed>0?'，失败 '+failed+' 条':''}</div>\`;
 if(batchType==='proxyip')await loadProxyIPs();
 else if(batchType==='outbound')await loadOutbounds();
+else if(batchType==='argo')await loadArgoSubscribes();
 else await loadCFIPs();
 
 if(failed===0){
@@ -1557,7 +1699,7 @@ setTimeout(()=>closeBatchModal(),1500);
 }
 
 async function batchEnable(type,enabled){
-const className=type==='proxyip'?'proxyip-check':type==='outbound'?'outbound-check':'cfip-check';
+const className=type==='proxyip'?'proxyip-check':type==='outbound'?'outbound-check':type==='argo'?'argo-check':'cfip-check';
 // 只选择可见的复选框（排除隐藏的视图）
 const checks=Array.from(document.querySelectorAll('.'+className+':checked')).filter(cb => {
     let el = cb;
@@ -1586,11 +1728,12 @@ hideLoading();
 alert(\`操作完成：成功 \${success} 条\${failed>0?'，失败 '+failed+' 条':''}\`);
 if(type==='proxyip')await loadProxyIPs();
 else if(type==='outbound')await loadOutbounds();
+else if(type==='argo')await loadArgoSubscribes();
 else await loadCFIPs();
 }
 
 async function batchDelete(type){
-const className=type==='proxyip'?'proxyip-check':type==='outbound'?'outbound-check':'cfip-check';
+const className=type==='proxyip'?'proxyip-check':type==='outbound'?'outbound-check':type==='argo'?'argo-check':'cfip-check';
 // 只选择可见的复选框（排除隐藏的视图）
 const checks=Array.from(document.querySelectorAll('.'+className+':checked')).filter(cb => {
     let el = cb;
@@ -1619,6 +1762,7 @@ hideLoading();
 alert(\`删除完成：成功 \${success} 条\${failed>0?'，失败 '+failed+' 条':''}\`);
 if(type==='proxyip')await loadProxyIPs();
 else if(type==='outbound')await loadOutbounds();
+else if(type==='argo')await loadArgoSubscribes();
 else await loadCFIPs();
 }
 </script>
@@ -1640,6 +1784,7 @@ async function initDB(db) {
         CREATE TABLE IF NOT EXISTS outbounds (id INTEGER PRIMARY KEY, address TEXT, type TEXT, remark TEXT, enabled INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, exit_country TEXT, exit_city TEXT, exit_ip TEXT, exit_org TEXT, checked_at TEXT, created_at TEXT, updated_at TEXT);
         CREATE TABLE IF NOT EXISTS cf_ips (id INTEGER PRIMARY KEY, address TEXT, port INTEGER DEFAULT 443, remark TEXT, enabled INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
         CREATE TABLE IF NOT EXISTS subscribe_config (id INTEGER PRIMARY KEY, uuid TEXT, snippets_domain TEXT, proxy_path TEXT, updated_at TEXT);
+        CREATE TABLE IF NOT EXISTS argo_subscribe (id INTEGER PRIMARY KEY, token TEXT UNIQUE NOT NULL, template_link TEXT NOT NULL, remark TEXT, enabled INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
     `).catch(() => {});
     
     // 为已存在的 outbounds 表添加新列（如果不存在）
@@ -1711,6 +1856,9 @@ export default {
             if (parts[2] === 'ss' && parts[3]) {
                 // SS 订阅: /sub/ss/password
                 return handleSSSubscribe(env.DB, parts[3], request.url);
+            } else if (parts[2] === 'argo' && parts[3]) {
+                // ARGO 订阅: /sub/argo/token
+                return handleArgoSubscribe(env.DB, parts[3]);
             } else if (parts[2]) {
                 // VLESS 订阅: /sub/uuid
                 return handleSubscribe(env.DB, parts[2], request.url);
@@ -1783,6 +1931,23 @@ export default {
             const id = path.split('/')[3];
             if (method === 'PUT') return handleUpdateCFIP(request, env.DB, id);
             if (method === 'DELETE') return handleDeleteCFIP(env.DB, id);
+        }
+
+        // ARGO 订阅管理
+        if (path === '/api/argo') {
+            if (method === 'GET') return handleGetArgoSubscribes(env.DB);
+            if (method === 'POST') return handleAddArgoSubscribe(request, env.DB);
+        }
+        if (path.startsWith('/api/argo/')) {
+            const id = path.split('/')[3];
+            if (method === 'PUT') return handleUpdateArgoSubscribe(request, env.DB, id);
+            if (method === 'DELETE') return handleDeleteArgoSubscribe(env.DB, id);
+        }
+        if (path === '/api/argo/batch/enable' && method === 'POST') {
+            return handleBatchEnableArgoSubscribe(request, env.DB);
+        }
+        if (path === '/api/argo/batch/delete' && method === 'POST') {
+            return handleBatchDeleteArgoSubscribe(request, env.DB);
         }
 
         // 订阅生成 - VLESS
@@ -1971,6 +2136,176 @@ async function handleUpdateCFIP(request, db, id) {
 async function handleDeleteCFIP(db, id) {
     await db.prepare('DELETE FROM cf_ips WHERE id = ?').bind(id).run();
     return json({ success: true });
+}
+
+// ARGO 订阅管理
+async function handleGetArgoSubscribes(db) {
+    const { results } = await db.prepare('SELECT * FROM argo_subscribe ORDER BY sort_order, id').all();
+    return json({ success: true, data: results });
+}
+
+async function handleAddArgoSubscribe(request, db) {
+    const { template_link, remark, enabled = 1, sort_order = 0 } = await request.json();
+    if (!template_link) return json({ error: '模板链接不能为空' }, 400);
+
+    // 生成随机token
+    const token = generateRandomToken(16);
+
+    const r = await db.prepare(
+        'INSERT INTO argo_subscribe (token, template_link, remark, enabled, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, datetime("now"), datetime("now"))'
+    ).bind(token, template_link, remark, enabled, sort_order).run();
+
+    return json({ success: true, id: r.meta.last_row_id, token });
+}
+
+async function handleUpdateArgoSubscribe(request, db, id) {
+    const { template_link, remark, enabled } = await request.json();
+    await db.prepare(
+        'UPDATE argo_subscribe SET template_link = ?, remark = ?, enabled = ?, updated_at = datetime("now") WHERE id = ?'
+    ).bind(template_link, remark, enabled, id).run();
+    return json({ success: true });
+}
+
+async function handleDeleteArgoSubscribe(db, id) {
+    await db.prepare('DELETE FROM argo_subscribe WHERE id = ?').bind(id).run();
+    return json({ success: true });
+}
+
+async function handleBatchEnableArgoSubscribe(request, db) {
+    const { ids, enabled } = await request.json();
+    if (!Array.isArray(ids) || ids.length === 0) return json({ error: 'IDs不能为空' }, 400);
+
+    const placeholders = ids.map(() => '?').join(',');
+    await db.prepare(`UPDATE argo_subscribe SET enabled = ?, updated_at = datetime("now") WHERE id IN (${placeholders})`).bind(enabled, ...ids).run();
+    return json({ success: true });
+}
+
+async function handleBatchDeleteArgoSubscribe(request, db) {
+    const { ids } = await request.json();
+    if (!Array.isArray(ids) || ids.length === 0) return json({ error: 'IDs不能为空' }, 400);
+
+    const placeholders = ids.map(() => '?').join(',');
+    await db.prepare(`DELETE FROM argo_subscribe WHERE id IN (${placeholders})`).bind(...ids).run();
+    return json({ success: true });
+}
+
+// ARGO 订阅生成
+async function handleArgoSubscribe(db, token) {
+    // 1. 获取该token对应的模板
+    const template = await db.prepare(
+        'SELECT * FROM argo_subscribe WHERE token = ? AND enabled = 1'
+    ).bind(token).first();
+
+    if (!template) {
+        return new Response('Subscription not found', { status: 404 });
+    }
+
+    // 2. 获取所有启用的CFIP
+    const { results: cfips } = await db.prepare(
+        'SELECT * FROM cf_ips WHERE enabled = 1 ORDER BY sort_order, id'
+    ).all();
+
+    if (!cfips || cfips.length === 0) {
+        return new Response('No enabled CFIP found', { status: 404 });
+    }
+
+    // 3. 解析模板并替换优选域名/IP
+    try {
+        const links = generateArgoVlessLinks(template.template_link, cfips);
+
+        // 4. 返回Base64编码的订阅内容
+        const subscriptionContent = links.join('\n');
+        const base64Content = btoa(subscriptionContent);
+
+        return new Response(base64Content, {
+            headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+                'Cache-Control': 'no-store, no-cache, must-revalidate'
+            }
+        });
+    } catch (error) {
+        return new Response(`Error: ${error.message}`, { status: 500 });
+    }
+}
+
+function generateArgoVlessLinks(templateLink, cfips) {
+    const links = [];
+
+    // 判断是VLESS还是VMess格式
+    if (templateLink.startsWith('vless://')) {
+        // VLESS格式处理
+        const vlessRegex = /^vless:\/\/([^@]+)@([^:]+):(\d+)(\?[^#]*)?(#.*)?$/;
+        const match = templateLink.match(vlessRegex);
+
+        if (!match) {
+            throw new Error('Invalid VLESS template format');
+        }
+
+        const [, uuid, , , queryString, fragment] = match;
+        const originalRemark = fragment ? decodeURIComponent(fragment.substring(1)) : '';
+
+        // 为每个启用的CFIP生成节点
+        for (const cfip of cfips) {
+            let host = cfip.address;
+            const port = cfip.port || 443;
+
+            // 处理IPv6地址
+            if (host.includes(':') && !host.startsWith('[')) {
+                host = `[${host}]`;
+            }
+
+            // 构建新的VLESS链接（替换host:port）
+            const newRemark = `${originalRemark}-${cfip.remark || cfip.address}`;
+            const vlessLink = `vless://${uuid}@${host}:${port}${queryString || ''}#${encodeURIComponent(newRemark)}`;
+
+            links.push(vlessLink);
+        }
+    } else if (templateLink.startsWith('vmess://')) {
+        // VMess格式处理
+        try {
+            // 解码base64
+            const base64Data = templateLink.substring(8); // 去掉 "vmess://"
+            const jsonStr = decodeURIComponent(escape(atob(base64Data)));
+            const vmessConfig = JSON.parse(jsonStr);
+
+            const originalRemark = vmessConfig.ps || '';
+
+            // 为每个启用的CFIP生成节点
+            for (const cfip of cfips) {
+                // 复制配置对象
+                const newConfig = { ...vmessConfig };
+
+                // 替换地址和端口
+                newConfig.add = cfip.address;
+                newConfig.port = String(cfip.port || 443);
+
+                // 更新备注
+                newConfig.ps = `${originalRemark}-${cfip.remark || cfip.address}`;
+
+                // 重新编码为base64
+                const newJsonStr = JSON.stringify(newConfig);
+                const newBase64 = btoa(unescape(encodeURIComponent(newJsonStr)));
+                const vmessLink = `vmess://${newBase64}`;
+
+                links.push(vmessLink);
+            }
+        } catch (error) {
+            throw new Error('Invalid VMess template format: ' + error.message);
+        }
+    } else {
+        throw new Error('Unsupported protocol. Only vless:// and vmess:// are supported');
+    }
+
+    return links;
+}
+
+function generateRandomToken(length = 16) {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let token = '';
+    for (let i = 0; i < length; i++) {
+        token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
 }
 
 // 订阅

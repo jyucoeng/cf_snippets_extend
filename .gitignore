@@ -25,3 +25,5 @@ Telegram导入API文档.md
 Telegram集成说明.md
 test_telegram_api.py
 API接口总结.md
+.ace-tool/
+.claude/
