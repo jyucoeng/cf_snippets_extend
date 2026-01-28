@@ -546,8 +546,8 @@ const tbody=document.getElementById('argoTable');
 tbody.innerHTML='';
 
 for(const item of d.data){
-const subUrl=\`\${location.origin}/sub/argo/\${item.token}\`;
-const row=\`
+const subUrl=`\${location.origin}/sub/argo/\${item.token}`;
+const row=`
 <tr>
 <td><input type="checkbox" class="argo-check" value="\${item.id}"></td>
 <td>\${item.id}</td>
@@ -572,7 +572,7 @@ const row=\`
 </div>
 </td>
 </tr>
-\`;
+`;
 tbody.innerHTML+=row;
 }
 
@@ -580,11 +580,11 @@ document.getElementById('argoCheckAll').checked=false;
 
 // 卡片视图
 document.getElementById('argoCardView').innerHTML=d.data.map(i=>{
-const subUrl=\`\${location.origin}/sub/argo/\${i.token}\`;
+const subUrl=`\${location.origin}/sub/argo/\${i.token}`;
 const statusClass=i.enabled?'online':'offline';
 const statusText=i.enabled?'已启用':'已禁用';
 const protocol=i.template_link.startsWith('vless://')?'VLESS':(i.template_link.startsWith('vmess://')?'VMess':'未知');
-return \`<div class="outbound-card \${statusClass}" id="argo-card-\${i.id}">
+return `<div class="outbound-card \${statusClass}" id="argo-card-\${i.id}">
 <input type="checkbox" class="card-checkbox argo-check" value="\${i.id}">
 <div class="card-header">
 <div style="flex:1;padding-right:30px;min-width:0;overflow:hidden">
@@ -613,7 +613,7 @@ return \`<div class="outbound-card \${statusClass}" id="argo-card-\${i.id}">
 <span class="slider"></span>
 </label>
 </div>
-</div>\`;
+</div>`;
 }).join('');
 
 // 根据当前视图模式显示对应的视图
@@ -663,7 +663,7 @@ async function loadProxyIPs(){
 const d=await api('/proxyip');
 if(d.success){
 // 列表视图
-document.getElementById('proxyipTable').innerHTML=d.data.map(i=>\`<tr id="proxy-\${i.id}">
+document.getElementById('proxyipTable').innerHTML=d.data.map(i=>`<tr id="proxy-\${i.id}">
 <td><input type="checkbox" class="proxyip-check" value="\${i.id}"></td>
 <td>\${i.id}</td>
 <td class="addr-cell">\${i.address}</td>
@@ -671,14 +671,14 @@ document.getElementById('proxyipTable').innerHTML=d.data.map(i=>\`<tr id="proxy-
 <td><label class="switch"><input type="checkbox" \${i.enabled?'checked':''} onchange="toggle('proxyip',\${i.id},this.checked)"><span class="slider"></span></label></td>
 <td class="actions">
 <button class="btn btn-warning btn-sm" data-icon="✏️" onclick="editItem('proxyip',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}')">✏️ 编辑</button>
-</td></tr>\`).join('');
+</td></tr>`).join('');
 document.getElementById('proxyipCheckAll').checked=false;
 
 // 卡片视图
 document.getElementById('proxyipCardView').innerHTML=d.data.map(i=>{
 const statusClass=i.enabled?'online':'offline';
 const statusText=i.enabled?'已启用':'已禁用';
-return \`<div class="outbound-card \${statusClass}" id="proxyip-card-\${i.id}">
+return `<div class="outbound-card \${statusClass}" id="proxyip-card-\${i.id}">
 <input type="checkbox" class="card-checkbox proxyip-check" value="\${i.id}">
 <div class="card-header">
 <div style="flex:1;padding-right:30px;min-width:0;overflow:hidden">
@@ -698,7 +698,7 @@ return \`<div class="outbound-card \${statusClass}" id="proxyip-card-\${i.id}">
 <span class="slider"></span>
 </label>
 </div>
-</div>\`;
+</div>`;
 }).join('');
 
 // 根据当前视图模式显示对应的视图
@@ -724,10 +724,10 @@ const city=i.exit_city||'';
 exitInfo=country&&city?country+'-'+city:(country||city);
 if(i.checked_at){
 const checkTime=new Date(i.checked_at).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-exitInfo+=\` <span style="font-size:11px;color:#999">(\${checkTime})</span>\`;
+exitInfo+=` <span style="font-size:11px;color:#999">(\${checkTime})</span>`;
 }
 }
-return \`<tr id="outbound-\${i.id}">
+return `<tr id="outbound-\${i.id}">
 <td data-label="选择"><input type="checkbox" class="outbound-check" value="\${i.id}"></td>
 <td data-label="ID">\${i.id}</td>
 <td data-label="地址" class="addr-cell" title="\${i.address}">\${maskAddress(i.address)}</td>
@@ -739,7 +739,7 @@ return \`<tr id="outbound-\${i.id}">
 <td data-label="操作" class="actions">
 <button class="btn btn-success btn-sm" data-icon="⚡" onclick="testSingleOutbound(\${i.id})">⚡ 测速</button>
 <button class="btn btn-warning btn-sm" data-icon="✏️" onclick="editItem('outbound',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}')">✏️ 编辑</button>
-</td></tr>\`;
+</td></tr>`;
 }).join('');
 document.getElementById('outboundCheckAll').checked=false;
 
@@ -755,7 +755,7 @@ exitClass='online';
 }
 const statusClass=i.enabled?'online':'offline';
 const statusText=i.enabled?'已启用':'已禁用';
-return \`<div class="outbound-card \${statusClass}" id="outbound-card-\${i.id}">
+return `<div class="outbound-card \${statusClass}" id="outbound-card-\${i.id}">
 <input type="checkbox" class="card-checkbox outbound-check" value="\${i.id}">
 <div class="card-header">
 <div style="flex:1;padding-right:30px;min-width:0;overflow:hidden">
@@ -780,7 +780,7 @@ return \`<div class="outbound-card \${statusClass}" id="outbound-card-\${i.id}">
 </label>
 </div>
 </div>
-</div>\`;
+</div>`;
 }).join('');
 
 // 根据当前视图模式显示对应的视图
@@ -798,7 +798,7 @@ async function loadCFIPs(){
 const d=await api('/cfip');
 if(d.success){
 // 列表视图
-document.getElementById('cfipTable').innerHTML=d.data.map(i=>\`<tr>
+document.getElementById('cfipTable').innerHTML=d.data.map(i=>`<tr>
 <td><input type="checkbox" class="cfip-check" value="\${i.id}"></td>
 <td>\${i.id}</td>
 <td>\${i.address}</td>
@@ -807,14 +807,14 @@ document.getElementById('cfipTable').innerHTML=d.data.map(i=>\`<tr>
 <td><label class="switch"><input type="checkbox" \${i.enabled?'checked':''} onchange="toggle('cfip',\${i.id},this.checked)"><span class="slider"></span></label></td>
 <td class="actions">
 <button class="btn btn-warning btn-sm" data-icon="✏️" onclick="editItem('cfip',\${i.id},'\${i.address.replace(/'/g,"\\\\'")}','\${(i.remark||'').replace(/'/g,"\\\\'")}',\${i.port})">✏️ 编辑</button>
-</td></tr>\`).join('');
+</td></tr>`).join('');
 document.getElementById('cfipCheckAll').checked=false;
 
 // 卡片视图
 document.getElementById('cfipCardView').innerHTML=d.data.map(i=>{
 const statusClass=i.enabled?'online':'offline';
 const statusText=i.enabled?'已启用':'已禁用';
-return \`<div class="outbound-card \${statusClass}" id="cfip-card-\${i.id}">
+return `<div class="outbound-card \${statusClass}" id="cfip-card-\${i.id}">
 <input type="checkbox" class="card-checkbox cfip-check" value="\${i.id}">
 <div class="card-header">
 <div style="flex:1;padding-right:30px;min-width:0;overflow:hidden">
@@ -834,7 +834,7 @@ return \`<div class="outbound-card \${statusClass}" id="cfip-card-\${i.id}">
 <span class="slider"></span>
 </label>
 </div>
-</div>\`;
+</div>`;
 }).join('');
 
 // 根据当前视图模式显示对应的视图
@@ -1133,15 +1133,15 @@ const isEdit=id!==null;
 const titles={'proxyip':'ProxyIP(反代IP)','outbound':'全局出站','cfip':'CFIP(优选域名)'};
 document.getElementById('modalTitle').textContent=(isEdit?'编辑':'添加')+titles[type];
 if(type==='proxyip'){
-document.getElementById('modalBody').innerHTML=\`<div class="form-group"><label>地址</label><input type="text" id="mAddr" value="\${addr}" placeholder="IP/域名"></div>
-<div class="form-group"><label>备注</label><input type="text" id="mRemark" value="\${remark}"></div>\`;
+document.getElementById('modalBody').innerHTML=`<div class="form-group"><label>地址</label><input type="text" id="mAddr" value="\${addr}" placeholder="IP/域名"></div>
+<div class="form-group"><label>备注</label><input type="text" id="mRemark" value="\${remark}"></div>`;
 }else if(type==='outbound'){
-document.getElementById('modalBody').innerHTML=\`<div class="form-group"><label>地址</label><input type="text" id="mAddr" value="\${addr}" placeholder="socks5://host:port 或 http://host:port"></div>
-<div class="form-group"><label>备注</label><input type="text" id="mRemark" value="\${remark}"></div>\`;
+document.getElementById('modalBody').innerHTML=`<div class="form-group"><label>地址</label><input type="text" id="mAddr" value="\${addr}" placeholder="socks5://host:port 或 http://host:port"></div>
+<div class="form-group"><label>备注</label><input type="text" id="mRemark" value="\${remark}"></div>`;
 }else{
-document.getElementById('modalBody').innerHTML=\`<div class="form-group"><label>地址</label><input type="text" id="mAddr" value="\${addr}" placeholder="优选域名或IP"></div>
+document.getElementById('modalBody').innerHTML=`<div class="form-group"><label>地址</label><input type="text" id="mAddr" value="\${addr}" placeholder="优选域名或IP"></div>
 <div class="form-group"><label>端口</label><input type="number" id="mPort" value="\${port}"></div>
-<div class="form-group"><label>备注</label><input type="text" id="mRemark" value="\${remark}"></div>\`;
+<div class="form-group"><label>备注</label><input type="text" id="mRemark" value="\${remark}"></div>`;
 }
 document.getElementById('addModal').classList.remove('hidden');
 }
@@ -1250,10 +1250,10 @@ const yesNo=(val)=>val?'<span style="background:#48c774;color:#fff;padding:3px 1
 const percent=(val)=>{
 const v=parseFloat(val)||0;
 const color=v<10?'#48c774':v<30?'#ffdd57':'#f14668';
-return \`<span style="background:\${color};color:\${v<30?'#333':'#fff'};padding:3px 10px;border-radius:4px;font-size:12px;font-weight:bold">\${v.toFixed(2)}%</span>\`;
+return `<span style="background:\${color};color:\${v<30?'#333':'#fff'};padding:3px 10px;border-radius:4px;font-size:12px;font-weight:bold">\${v.toFixed(2)}%</span>`;
 };
 
-const html=\`
+const html=`
 <div style="display:flex;gap:20px">
 <div style="flex:1;background:#e8f5e9;padding:20px;border-radius:8px">
 <h3 style="color:#2e7d32;margin:0 0 16px 0;text-align:center;font-size:18px">入口信息</h3>
@@ -1293,7 +1293,7 @@ const html=\`
 <div style="text-align:center;margin-top:16px;color:#999;font-size:13px">
 检测时间：\${outbound.checked_at?new Date(outbound.checked_at).toLocaleString('zh-CN'):'-'}
 </div>
-\`;
+`;
 document.getElementById('exitDetailBody').innerHTML=html;
 document.getElementById('exitDetailModal').classList.remove('hidden');
 }finally{
@@ -1327,7 +1327,7 @@ const exitInfo=country&&city?country+'-'+city:(country||city||'未知');
 const checkTime=new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
 // 更新列表视图
 if(exitCell){
-exitCell.innerHTML=\`\${exitInfo} <span style="font-size:11px;color:#999">(\${checkTime})</span>\`;
+exitCell.innerHTML=`\${exitInfo} <span style="font-size:11px;color:#999">(\${checkTime})</span>`;
 exitCell.className='exit-link';
 }
 // 更新卡片视图
@@ -1418,7 +1418,7 @@ const exitInfo=country&&city?country+'-'+city:(country||city||'未知');
 const checkTime=new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
 // 更新列表视图
 if(exitCell){
-exitCell.innerHTML=\`\${exitInfo} <span style="font-size:11px;color:#999">(\${checkTime})</span>\`;
+exitCell.innerHTML=`\${exitInfo} <span style="font-size:11px;color:#999">(\${checkTime})</span>`;
 exitCell.className='exit-link';
 }
 // 更新卡片视图
@@ -1515,7 +1515,7 @@ const blob=new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'
 const url=URL.createObjectURL(blob);
 const a=document.createElement('a');
 a.href=url;
-a.download=\`cf-snippets-extend-\${new Date().toISOString().split('T')[0]}.json\`;
+a.download=`cf-snippets-extend-\${new Date().toISOString().split('T')[0]}.json`;
 document.body.appendChild(a);
 a.click();
 document.body.removeChild(a);
@@ -1712,7 +1712,7 @@ address=addrPart;
 items.push({address,port,remark:remark||undefined});
 }
 }catch(e){
-errors.push(\`第\${lineNum}行: \${e.message}\`);
+errors.push(`第\${lineNum}行: \${e.message}`);
 }
 }
 
@@ -1734,7 +1734,7 @@ failed++;
 }
 hideLoading();
 
-document.getElementById('batchAlert').innerHTML=\`<div class="alert alert-success">成功添加 \${success} 条\${failed>0?'，失败 '+failed+' 条':''}</div>\`;
+document.getElementById('batchAlert').innerHTML=`<div class="alert alert-success">成功添加 \${success} 条\${failed>0?'，失败 '+failed+' 条':''}</div>`;
 if(batchType==='proxyip')await loadProxyIPs();
 else if(batchType==='outbound')await loadOutbounds();
 else if(batchType==='argo')await loadArgoSubscribes();
@@ -1758,7 +1758,7 @@ const checks=Array.from(document.querySelectorAll('.'+className+':checked')).fil
 });
 if(checks.length===0)return alert('请先选择要修改的项');
 
-if(!confirm(\`确定\${enabled?'启用':'禁用'}选中的 \${checks.length} 项？\`))return;
+if(!confirm(`确定\${enabled?'启用':'禁用'}选中的 \${checks.length} 项？`))return;
 
 showLoading();
 let success=0,failed=0;
@@ -1772,7 +1772,7 @@ failed++;
 }
 hideLoading();
 
-alert(\`操作完成：成功 \${success} 条\${failed>0?'，失败 '+failed+' 条':''}\`);
+alert(`操作完成：成功 \${success} 条\${failed>0?'，失败 '+failed+' 条':''}`);
 if(type==='proxyip')await loadProxyIPs();
 else if(type==='outbound')await loadOutbounds();
 else if(type==='argo')await loadArgoSubscribes();
@@ -1792,7 +1792,7 @@ const checks=Array.from(document.querySelectorAll('.'+className+':checked')).fil
 });
 if(checks.length===0)return alert('请先选择要删除的项');
 
-if(!confirm(\`确定删除选中的 \${checks.length} 项？\`))return;
+if(!confirm(`确定删除选中的 \${checks.length} 项？`))return;
 
 showLoading();
 let success=0,failed=0;
@@ -1806,7 +1806,7 @@ failed++;
 }
 hideLoading();
 
-alert(\`删除完成：成功 \${success} 条\${failed>0?'，失败 '+failed+' 条':''}\`);
+alert(`删除完成：成功 \${success} 条\${failed>0?'，失败 '+failed+' 条':''}`);
 if(type==='proxyip')await loadProxyIPs();
 else if(type==='outbound')await loadOutbounds();
 else if(type==='argo')await loadArgoSubscribes();

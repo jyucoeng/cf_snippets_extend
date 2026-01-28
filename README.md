@@ -130,7 +130,7 @@
 ### 步骤 2：创建 D1 数据库
 
 1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
-2. 在左侧菜单找到 **Workers 和 Pages**，点击进入
+2. 在左侧菜单找到 **Storage & databases**，点击进入
 3. 切换到 **D1 SQL 数据库** 标签页
 4. 点击 **创建数据库** 按钮
 5. 数据库名称填写：`snippets-manager-db`
@@ -143,18 +143,20 @@
 ---
 
 ### 步骤 3：部署到 Cloudflare Pages
-
-1. 返回 **Workers 和 Pages** 主页
-2. 点击 **创建应用程序** 按钮
-3. 选择 **Pages** 标签页
-4. 点击 **连接到 Git**
-5. 授权 Cloudflare 访问你的 GitHub 账号
-6. 选择刚才 Fork 的项目仓库
-7. 配置构建设置：
+1. 在左侧菜单找到 **Compute & AI**，点击进入
+2. 返回 **Workers 和 Pages** 主页
+3. 点击 **创建应用程序** 按钮
+4. 选择 **Pages** 标签页
+![page](screenshots/page.png)
+5. 点击 **连接到 Git**
+6. 授权 Cloudflare 访问你的 GitHub 账号
+7. 选择刚才 Fork 的项目仓库
+8. 配置构建设置：
    - **项目名称**：`cf-snippets-extend`（可自定义）
    - **生产分支**：`main`
    - **构建命令**：留空
    - **构建输出目录**：`public`
+   其他的默认
 8. 点击 **保存并部署** 按钮
 
 部署过程大约需要 1-2 分钟，请耐心等待。
@@ -172,6 +174,7 @@
 5. 点击 **保存** 按钮
 
 ![绑定数据库](screenshots/bind-db-web.png)
+![绑定数据库](screenshots/bind-db-web2.png)
 
 ---
 
