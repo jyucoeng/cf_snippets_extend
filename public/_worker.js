@@ -87,11 +87,9 @@ async function initDB(db) {
     }
 }
 
-// 生成 64 位随机 token
+// 生成 32 位随机 token
 function generateToken() {
-    const uuid1 = crypto.randomUUID().replace(/-/g, '');
-    const uuid2 = crypto.randomUUID().replace(/-/g, '');
-    return uuid1 + uuid2; // 32 + 32 = 64 位
+    return crypto.randomUUID().replace(/-/g, '');
 }
 
 function json(data, status = 200) {
@@ -636,7 +634,7 @@ async function handleAddSubscribeConfig(request, db) {
     const max = await db.prepare('SELECT MAX(id) as m FROM subscribe_config').first();
     const finalRemark = remark || `${type.toUpperCase()}订阅-${(max?.m || 0) + 1}`;
 
-    // 生成随机 token (64位)
+    // 生成随机 token (32位)
     const token = generateToken();
 
     const r = await db.prepare(
