@@ -14,7 +14,7 @@ async function initDB(db) {
         CREATE TABLE IF NOT EXISTS proxy_ips (id INTEGER PRIMARY KEY, address TEXT, type TEXT, remark TEXT, enabled INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
         CREATE TABLE IF NOT EXISTS outbounds (id INTEGER PRIMARY KEY, address TEXT, type TEXT, remark TEXT, enabled INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, exit_country TEXT, exit_city TEXT, exit_ip TEXT, exit_org TEXT, checked_at TEXT, created_at TEXT, updated_at TEXT);
         CREATE TABLE IF NOT EXISTS cf_ips (id INTEGER PRIMARY KEY, address TEXT, port INTEGER DEFAULT 443, remark TEXT, enabled INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
-        CREATE TABLE IF NOT EXISTS subscribe_config (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, uuid TEXT, snippets_domain TEXT, proxy_path TEXT, remark TEXT, enabled INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
+        CREATE TABLE IF NOT EXISTS subscribe_config (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, token TEXT UNIQUE NOT NULL, uuid TEXT, snippets_domain TEXT, proxy_path TEXT, remark TEXT, enabled INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
         CREATE TABLE IF NOT EXISTS argo_subscribe (id INTEGER PRIMARY KEY, token TEXT UNIQUE NOT NULL, template_link TEXT NOT NULL, remark TEXT, enabled INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
     `).catch(() => { });
 
@@ -52,6 +52,7 @@ async function initDB(db) {
     try {
         // 为旧表添加新列
         await db.prepare(`ALTER TABLE subscribe_config ADD COLUMN type TEXT`).run().catch(() => { });
+        await db.prepare(`ALTER TABLE subscribe_config ADD COLUMN token TEXT`).run().catch(() => { });
         await db.prepare(`ALTER TABLE subscribe_config ADD COLUMN remark TEXT`).run().catch(() => { });
         await db.prepare(`ALTER TABLE subscribe_config ADD COLUMN enabled INTEGER DEFAULT 1`).run().catch(() => { });
         await db.prepare(`ALTER TABLE subscribe_config ADD COLUMN sort_order INTEGER DEFAULT 0`).run().catch(() => { });
@@ -60,15 +61,17 @@ async function initDB(db) {
         // 迁移 id=1 的 VLESS 配置
         const vlessConfig = await db.prepare('SELECT * FROM subscribe_config WHERE id = 1').first();
         if (vlessConfig && !vlessConfig.type) {
-            await db.prepare('UPDATE subscribe_config SET type = ?, remark = ?, enabled = 1, sort_order = 0, created_at = datetime("now") WHERE id = 1')
-                .bind('vless', 'VLESS订阅-1').run();
+            const token = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
+            await db.prepare('UPDATE subscribe_config SET type = ?, token = ?, remark = ?, enabled = 1, sort_order = 0, created_at = datetime("now") WHERE id = 1')
+                .bind('vless', token, 'VLESS订阅-1').run();
         }
 
         // 迁移 id=2 的 SS 配置
         const ssConfig = await db.prepare('SELECT * FROM subscribe_config WHERE id = 2').first();
         if (ssConfig && !ssConfig.type) {
-            await db.prepare('UPDATE subscribe_config SET type = ?, remark = ?, enabled = 1, sort_order = 0, created_at = datetime("now") WHERE id = 2')
-                .bind('ss', 'SS订阅-1').run();
+            const token = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
+            await db.prepare('UPDATE subscribe_config SET type = ?, token = ?, remark = ?, enabled = 1, sort_order = 0, created_at = datetime("now") WHERE id = 2')
+                .bind('ss', token, 'SS订阅-1').run();
         }
     } catch (e) {
         console.error('Subscribe config migration error:', e);
@@ -110,17 +113,17 @@ export default {
         // 公开订阅
         if (path.startsWith('/sub/')) {
             const parts = path.split('/');
-            if (parts[2] === 'config' && parts[3]) {
-                // 通过配置 ID 生成订阅: /sub/config/1
-                return handleSubscribeByConfigId(env.DB, parts[3], request.url);
+            if (parts[2] === 'token' && parts[3]) {
+                // 通过 token 生成订阅: /sub/token/{token}
+                return handleSubscribeByToken(env.DB, parts[3], request.url);
             } else if (parts[2] === 'ss' && parts[3]) {
-                // SS 订阅: /sub/ss/password
+                // SS 订阅: /sub/ss/password (兼容旧版)
                 return handleSSSubscribe(env.DB, parts[3], request.url);
             } else if (parts[2] === 'argo' && parts[3]) {
                 // ARGO 订阅: /sub/argo/token
                 return handleArgoSubscribe(env.DB, parts[3]);
             } else if (parts[2]) {
-                // VLESS 订阅: /sub/uuid
+                // VLESS 订阅: /sub/uuid (兼容旧版)
                 return handleSubscribe(env.DB, parts[2], request.url);
             }
         }
@@ -613,11 +616,14 @@ async function handleAddSubscribeConfig(request, db) {
     const max = await db.prepare('SELECT MAX(id) as m FROM subscribe_config').first();
     const finalRemark = remark || `${type.toUpperCase()}订阅-${(max?.m || 0) + 1}`;
 
-    const r = await db.prepare(
-        'INSERT INTO subscribe_config (type, uuid, snippets_domain, proxy_path, remark, enabled, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime("now"), datetime("now"))'
-    ).bind(type, uuid, domain, finalPath, finalRemark, enabled ? 1 : 0, sort_order).run();
+    // 生成随机 token (16位)
+    const token = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
 
-    return json({ success: true, data: { id: r.meta.last_row_id } });
+    const r = await db.prepare(
+        'INSERT INTO subscribe_config (type, token, uuid, snippets_domain, proxy_path, remark, enabled, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime("now"), datetime("now"))'
+    ).bind(type, token, uuid, domain, finalPath, finalRemark, enabled ? 1 : 0, sort_order).run();
+
+    return json({ success: true, data: { id: r.meta.last_row_id, token } });
 }
 
 async function handleUpdateSubscribeConfig(request, db, id) {
@@ -740,7 +746,22 @@ async function handleGenerateSSSubscribe(request, db) {
     return json({ success: true, data: { plain: links.join('\n'), count: links.length } });
 }
 
-// 通过配置 ID 生成订阅
+// 通过 token 生成订阅
+async function handleSubscribeByToken(db, token, url) {
+    const config = await db.prepare('SELECT * FROM subscribe_config WHERE token = ? AND enabled = 1').bind(token).first();
+    if (!config) return new Response('Not Found', { status: 404 });
+
+    // 根据类型调用对应的订阅生成函数
+    if (config.type === 'vless') {
+        return handleSubscribe(db, config.uuid, url, config);
+    } else if (config.type === 'ss') {
+        return handleSSSubscribe(db, config.uuid, url, config);
+    }
+
+    return new Response('Invalid Config Type', { status: 400 });
+}
+
+// 通过配置 ID 生成订阅 (已废弃，保留用于兼容)
 async function handleSubscribeByConfigId(db, configId, url) {
     const config = await db.prepare('SELECT * FROM subscribe_config WHERE id = ? AND enabled = 1').bind(configId).first();
     if (!config) return new Response('Not Found', { status: 404 });

@@ -490,7 +490,7 @@ return;
 }
 
 list.innerHTML=d.data.map(item=>{
-const subUrl=`${location.origin}/sub/config/${item.id}`;
+const subUrl=`${location.origin}/sub/token/${item.token}`;
 const statusClass=item.enabled?'online':'offline';
 const statusText=item.enabled?'已启用':'已禁用';
 return `
@@ -498,7 +498,7 @@ return `
 <div class="card-header">
 <div style="flex:1">
 <div class="card-title">${item.remark||'VLESS订阅-'+item.id}</div>
-<div style="font-size:11px;color:#999;margin-top:4px">ID: ${item.id} | UUID: ${item.uuid}</div>
+<div style="font-size:11px;color:#999;margin-top:4px">Token: ${item.token} | UUID: ${item.uuid}</div>
 </div>
 <span class="badge badge-${item.enabled?'success':'secondary'}">${statusText}</span>
 </div>
@@ -532,7 +532,7 @@ return;
 }
 
 list.innerHTML=d.data.map(item=>{
-const subUrl=`${location.origin}/sub/config/${item.id}`;
+const subUrl=`${location.origin}/sub/token/${item.token}`;
 const statusClass=item.enabled?'online':'offline';
 const statusText=item.enabled?'已启用':'已禁用';
 return `
@@ -540,7 +540,7 @@ return `
 <div class="card-header">
 <div style="flex:1">
 <div class="card-title">${item.remark||'SS订阅-'+item.id}</div>
-<div style="font-size:11px;color:#999;margin-top:4px">ID: ${item.id} | 密码: ${item.uuid}</div>
+<div style="font-size:11px;color:#999;margin-top:4px">Token: ${item.token} | 密码: ${item.uuid}</div>
 </div>
 <span class="badge badge-${item.enabled?'success':'secondary'}">${statusText}</span>
 </div>
@@ -1297,7 +1297,7 @@ async function copyAllSubscribes(type){
 const d=await api(`/subscribe/config?type=${type}`);
 if(!d.success||d.data.length===0)return alert('没有可用的订阅配置');
 
-const urls=d.data.filter(x=>x.enabled).map(x=>`${location.origin}/sub/config/${x.id}`).join('\n');
+const urls=d.data.filter(x=>x.enabled).map(x=>`${location.origin}/sub/token/${x.token}`).join('\n');
 if(!urls)return alert('没有启用的订阅配置');
 
 try{
