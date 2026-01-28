@@ -61,7 +61,7 @@ async function initDB(db) {
         // 迁移 id=1 的 VLESS 配置
         const vlessConfig = await db.prepare('SELECT * FROM subscribe_config WHERE id = 1').first();
         if (vlessConfig && !vlessConfig.type) {
-            const token = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
+            const token = generateToken();
             await db.prepare('UPDATE subscribe_config SET type = ?, token = ?, remark = ?, enabled = 1, sort_order = 0, created_at = datetime("now") WHERE id = 1')
                 .bind('vless', token, 'VLESS订阅-1').run();
         }
@@ -69,7 +69,7 @@ async function initDB(db) {
         // 迁移 id=2 的 SS 配置
         const ssConfig = await db.prepare('SELECT * FROM subscribe_config WHERE id = 2').first();
         if (ssConfig && !ssConfig.type) {
-            const token = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
+            const token = generateToken();
             await db.prepare('UPDATE subscribe_config SET type = ?, token = ?, remark = ?, enabled = 1, sort_order = 0, created_at = datetime("now") WHERE id = 2')
                 .bind('ss', token, 'SS订阅-1').run();
         }
@@ -78,13 +78,20 @@ async function initDB(db) {
         const { results: noTokenConfigs } = await db.prepare('SELECT id FROM subscribe_config WHERE token IS NULL').all();
         if (noTokenConfigs && noTokenConfigs.length > 0) {
             for (const config of noTokenConfigs) {
-                const token = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
+                const token = generateToken();
                 await db.prepare('UPDATE subscribe_config SET token = ? WHERE id = ?').bind(token, config.id).run();
             }
         }
     } catch (e) {
         console.error('Subscribe config migration error:', e);
     }
+}
+
+// 生成 64 位随机 token
+function generateToken() {
+    const uuid1 = crypto.randomUUID().replace(/-/g, '');
+    const uuid2 = crypto.randomUUID().replace(/-/g, '');
+    return uuid1 + uuid2; // 32 + 32 = 64 位
 }
 
 function json(data, status = 200) {
@@ -228,7 +235,11 @@ export default {
             if (method === 'POST') return handleAddSubscribeConfig(request, env.DB);
         }
         if (path.startsWith('/api/subscribe/config/')) {
-            const id = path.split('/')[4];
+            const parts = path.split('/');
+            const id = parts[4];
+            if (parts[5] === 'reset-token' && method === 'POST') {
+                return handleResetSubscribeToken(env.DB, id);
+            }
             if (method === 'PUT') return handleUpdateSubscribeConfig(request, env.DB, id);
             if (method === 'DELETE') return handleDeleteSubscribeConfig(env.DB, id);
         }
@@ -625,8 +636,8 @@ async function handleAddSubscribeConfig(request, db) {
     const max = await db.prepare('SELECT MAX(id) as m FROM subscribe_config').first();
     const finalRemark = remark || `${type.toUpperCase()}订阅-${(max?.m || 0) + 1}`;
 
-    // 生成随机 token (16位)
-    const token = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
+    // 生成随机 token (64位)
+    const token = generateToken();
 
     const r = await db.prepare(
         'INSERT INTO subscribe_config (type, token, uuid, snippets_domain, proxy_path, remark, enabled, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime("now"), datetime("now"))'
@@ -662,6 +673,12 @@ async function handleUpdateSubscribeConfig(request, db, id) {
 async function handleDeleteSubscribeConfig(db, id) {
     await db.prepare('DELETE FROM subscribe_config WHERE id = ?').bind(id).run();
     return json({ success: true });
+}
+
+async function handleResetSubscribeToken(db, id) {
+    const newToken = generateToken();
+    await db.prepare('UPDATE subscribe_config SET token = ?, updated_at = datetime("now") WHERE id = ?').bind(newToken, id).run();
+    return json({ success: true, data: { token: newToken } });
 }
 
 // VLESS 订阅配置

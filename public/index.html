@@ -21,6 +21,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:linear-g
 .btn-success:hover{background:#3abb67}
 .btn-warning{background:#ffdd57;color:#333}
 .btn-warning:hover{background:#ffd83d}
+.btn-info{background:#3298dc;color:#fff}
+.btn-info:hover{background:#2793da}
 .btn-danger{background:#f14668;color:#fff}
 .btn-danger:hover{background:#ef2e4a}
 .btn-sm{padding:4px 10px;font-size:12px;white-space:nowrap}
@@ -513,6 +515,7 @@ return `
 <div class="card-actions">
 <button class="btn btn-success btn-sm" onclick="copyText('${subUrl}')">📋 复制订阅</button>
 <button class="btn btn-warning btn-sm" onclick="editSubscribeConfig('vless',${item.id})">✏️ 编辑</button>
+<button class="btn btn-info btn-sm" onclick="resetSubscribeToken(${item.id})">🔄 重置Token</button>
 <button class="btn btn-${item.enabled?'secondary':'success'} btn-sm" onclick="toggleSubscribeEnable(${item.id},${!item.enabled})">${item.enabled?'禁用':'启用'}</button>
 <button class="btn btn-danger btn-sm" onclick="deleteSubscribeConfig(${item.id})">🗑️ 删除</button>
 </div>
@@ -555,6 +558,7 @@ return `
 <div class="card-actions">
 <button class="btn btn-success btn-sm" onclick="copyText('${subUrl}')">📋 复制订阅</button>
 <button class="btn btn-warning btn-sm" onclick="editSubscribeConfig('ss',${item.id})">✏️ 编辑</button>
+<button class="btn btn-info btn-sm" onclick="resetSubscribeToken(${item.id})">🔄 重置Token</button>
 <button class="btn btn-${item.enabled?'secondary':'success'} btn-sm" onclick="toggleSubscribeEnable(${item.id},${!item.enabled})">${item.enabled?'禁用':'启用'}</button>
 <button class="btn btn-danger btn-sm" onclick="deleteSubscribeConfig(${item.id})">🗑️ 删除</button>
 </div>
@@ -1289,6 +1293,19 @@ const d=await api(`/subscribe/config/${id}`,'DELETE');
 if(d.success){
 await loadVlessConfig();
 await loadSSConfig();
+}else alert(d.error);
+}finally{hideLoading()}
+}
+
+async function resetSubscribeToken(id){
+if(!confirm('确定重置此订阅的 Token？\n\n重置后旧的订阅地址将失效，需要使用新的订阅地址。'))return;
+showLoading();
+try{
+const d=await api(`/subscribe/config/${id}/reset-token`,'POST');
+if(d.success){
+await loadVlessConfig();
+await loadSSConfig();
+alert(`Token 已重置\n\n新 Token: ${d.data.token}`);
 }else alert(d.error);
 }finally{hideLoading()}
 }
