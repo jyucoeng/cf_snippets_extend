@@ -136,6 +136,9 @@ export default {
             } else if (parts[2] === 'argo' && parts[3]) {
                 // ARGO 订阅: /sub/argo/token
                 return handleArgoSubscribe(env.DB, parts[3]);
+            } else if (parts[2] === 'clash') {
+                // Clash 订阅转换
+                return handleClashSubscribe(env.DB, request.url, env);
             } else if (parts[2]) {
                 // VLESS 订阅: /sub/uuid (兼容旧版)
                 return handleSubscribe(env.DB, parts[2], request.url);
@@ -1764,4 +1767,1352 @@ async function handleTelegramImportCFIP(request, db) {
 }
 
 // 修改 export default 以适配 Pages
+
+/**
+ * ACL4SSR Configuration
+ */
+const CONFIG = {
+    rulesets: [
+        { group: '🎯 全球直连', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/CFnat.list' },
+        { group: '🎯 全球直连', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/LocalAreaNetwork.list' },
+        { group: '🎯 全球直连', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/UnBan.list' },
+        { group: '🛑 全球拦截', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/BanAD.list' },
+        { group: '🍃 应用净化', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/BanProgramAD.list' },
+        { group: '🍃 应用净化', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/adobe.list' },
+        { group: '🍃 应用净化', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/IDM.list' },
+        { group: '📢 谷歌FCM', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Ruleset/GoogleFCM.list' },
+        { group: '🎯 全球直连', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/GoogleCN.list' },
+        { group: '🎯 全球直连', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Ruleset/SteamCN.list' },
+        { group: 'Ⓜ️ 微软服务', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Microsoft.list' },
+        { group: '🍎 苹果服务', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Apple.list' },
+        { group: '📲 电报信息', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Telegram.list' },
+        { group: '🤖 OpenAi', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Ruleset/OpenAi.list' },
+        { group: '🤖 OpenAi', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/juewuy/ShellClash/master/rules/ai.list' },
+        { group: '🤖 OpenAi', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/Copilot.list' },
+        { group: '🤖 OpenAi', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/GithubCopilot.list' },
+        { group: '🤖 OpenAi', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/Claude.list' },
+        { group: '🛸 Antigravity', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ryty1/ACL4SSR/master/Clash/antigravity.list' },
+        { group: '📹 油管视频', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Ruleset/YouTube.list' },
+        { group: '🎥 奈飞视频', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Ruleset/Netflix.list' },
+        { group: '🌍 国外媒体', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ProxyMedia.list' },
+        { group: '🌍 国外媒体', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/Emby.list' },
+        { group: '🚀 节点选择', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ProxyLite.list' },
+        { group: '🚀 节点选择', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/CMBlog.list' },
+        { group: '🎯 全球直连', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ChinaDomain.list' },
+        { group: '🎯 全球直连', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/ChinaCompanyIp.list' },
+        { group: '🎯 全球直连', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/ChinaCompanyDomain.list' },
+        { group: '🎯 全球直连', source: 'https://gh-proxy.com/https://raw.githubusercontent.com/ryty1/ACL4SSR/master/Clash/zdy.list' },
+        { group: '🎯 全球直连', isBuiltin: true, type: 'GEOIP', value: 'CN' },
+        { group: '🐟 漏网之鱼', isBuiltin: true, type: 'FINAL' }
+    ],
+
+    proxyGroups: [
+        { name: '🚀 节点选择', type: 'select', proxies: ['♻️ 自动选择', '⚖️ 负载均衡', '☑️ 手动切换', '🇭🇰 香港节点', '🇲🇴 澳门节点', '🇹🇼 台湾节点', '🇯🇵 日本节点', '🇸🇬 狮城节点', '🇰🇷 韩国节点', '🇲🇳 蒙古节点', '🇲🇾 马来节点', '🇹🇭 泰国节点', '🇻🇳 越南节点', '🇵🇭 菲律宾节点', '🇮🇩 印尼节点', '🇰🇭 柬埔寨节点', '🇲🇲 缅甸节点', '🇱🇦 老挝节点', '🇮🇳 印度节点', '🇵🇰 巴基斯坦节点', '🇧🇩 孟加拉节点', '🇰🇿 哈萨克节点', '🇦🇪 阿联酋节点', '🇸🇦 沙特节点', '🇮🇱 以色列节点', '🇹🇷 土耳其节点', '🇮🇷 伊朗节点', '🇮🇶 伊拉克节点', '🇶🇦 卡塔尔节点', '🇺🇸 美国节点', '🇨🇦 加拿大节点', '🇲🇽 墨西哥节点', '🇵🇦 巴拿马节点', '🇧🇷 巴西节点', '🇦🇷 阿根廷节点', '🇨🇱 智利节点', '🇨🇴 哥伦比亚节点', '🇵🇪 秘鲁节点', '🇻🇪 委内瑞拉节点', '🇪🇨 厄瓜多尔节点', '🇺🇾 乌拉圭节点', '🇬🇧 英国节点', '🇩🇪 德国节点', '🇫🇷 法国节点', '🇳🇱 荷兰节点', '🇧🇪 比利时节点', '🇨🇭 瑞士节点', '🇦🇹 奥地利节点', '🇮🇪 爱尔兰节点', '🇸🇪 瑞典节点', '🇳🇴 挪威节点', '🇫🇮 芬兰节点', '🇩🇰 丹麦节点', '🇮🇸 冰岛节点', '🇮🇹 意大利节点', '🇪🇸 西班牙节点', '🇵🇹 葡萄牙节点', '🇬🇷 希腊节点', '🇷🇺 俄罗斯节点', '🇺🇦 乌克兰节点', '🇧🇾 白俄罗斯节点', '🇵🇱 波兰节点', '🇨🇿 捷克节点', '🇸🇰 斯洛伐克节点', '🇭🇺 匈牙利节点', '🇷🇴 罗马尼亚节点', '🇧🇬 保加利亚节点', '🇲🇩 摩尔多瓦节点', '🇱🇻 拉脱维亚节点', '🇱🇹 立陶宛节点', '🇪🇪 爱沙尼亚节点', '🇸🇮 斯洛文尼亚节点', '🇭🇷 克罗地亚节点', '🇷🇸 塞尔维亚节点', '🇱🇺 卢森堡节点', '🇦🇺 澳洲节点', '🇳🇿 新西兰节点', '🇿🇦 南非节点', '🇪🇬 埃及节点', '🇳🇬 尼日利亚节点', '🇰🇪 肯尼亚节点', 'DIRECT'] },
+        { name: '☑️ 手动切换', type: 'select', filter: '.*' },
+        { name: '♻️ 自动选择', type: 'url-test', filter: '.*', url: 'http://www.gstatic.com/generate_204', interval: 300, tolerance: 50 },
+        { name: '⚖️ 负载均衡', type: 'load-balance', proxies: ['☁️ Snippets'], url: 'http://www.gstatic.com/generate_204', interval: 300, strategy: 'round-robin' },
+        { name: '📹 油管视频', type: 'select', proxies: ['🚀 节点选择', '♻️ 自动选择', '☑️ 手动切换', '⚖️ 负载均衡', '🇭🇰 香港节点', '🇹🇼 台湾节点', '🇯🇵 日本节点', '🇸🇬 狮城节点', '🇺🇸 美国节点', '🇰🇷 韩国节点', '🇬🇧 英国节点', '🇩🇪 德国节点', '🇫🇷 法国节点', '🇮🇳 印度节点', '🇦🇺 澳洲节点', 'DIRECT'] },
+        { name: '🎥 奈飞视频', type: 'select', proxies: ['🚀 节点选择', '♻️ 自动选择', '☑️ 手动切换', '⚖️ 负载均衡', '🇭🇰 香港节点', '🇹🇼 台湾节点', '🇯🇵 日本节点', '🇸🇬 狮城节点', '🇺🇸 美国节点', '🇰🇷 韩国节点', '🇬🇧 英国节点', '🇩🇪 德国节点', '🇫🇷 法国节点', '🇮🇳 印度节点', '🇦🇺 澳洲节点', '🇨🇦 加拿大节点', 'DIRECT'] },
+        { name: '🌍 国外媒体', type: 'select', proxies: ['🚀 节点选择', '♻️ 自动选择', '☑️ 手动切换', '⚖️ 负载均衡', '🇭🇰 香港节点', '🇹🇼 台湾节点', '🇯🇵 日本节点', '🇸🇬 狮城节点', '🇺🇸 美国节点', '🇰🇷 韩国节点', '🇬🇧 英国节点', '🇩🇪 德国节点', '🇫🇷 法国节点', '🇮🇳 印度节点', '🇦🇺 澳洲节点', 'DIRECT'] },
+        { name: '📲 电报信息', type: 'select', proxies: ['🚀 节点选择', '☁️ Snippets', '🇭🇰 香港节点', '☑️ 手动切换', '🇹🇼 台湾节点', '🇯🇵 日本节点', '🇸🇬 狮城节点', '🇺🇸 美国节点', '🇰🇷 韩国节点', '🇬🇧 英国节点', '🇩🇪 德国节点', '🇳🇱 荷兰节点', '🇮🇳 印度节点', '🇹🇷 土耳其节点', 'DIRECT'] },
+        { name: '🤖 OpenAi', type: 'select', proxies: ['🚀 节点选择', '♻️ 自动选择', '☑️ 手动切换', '🇺🇸 美国节点', '🇯🇵 日本节点', '🇸🇬 狮城节点', '🇬🇧 英国节点', '🇩🇪 德国节点', '🇫🇷 法国节点', '🇮🇳 印度节点', '🇨🇦 加拿大节点', '🇦🇺 澳洲节点', '🇳🇱 荷兰节点', '🇮🇪 爱尔兰节点', '🇫🇮 芬兰节点', '🇸🇪 瑞典节点', 'DIRECT'] },
+        { name: '🛸 Antigravity', type: 'select', proxies: ['♻️ 自动选择', '☑️ 手动切换', '☁️ Snippets', '🇭🇰 香港节点', '🇹🇼 台湾节点', '🇯🇵 日本节点', '🇸🇬 狮城节点', '🇺🇸 美国节点', '🇰🇷 韩国节点', '🇬🇧 英国节点', '🇩🇪 德国节点', '🇫🇷 法国节点', '🇮🇳 印度节点', '🇹🇷 土耳其节点', '🇨🇦 加拿大节点', '🇦🇺 澳洲节点', '🇫🇮 芬兰节点', '🇸🇪 瑞典节点', '🇨🇭 瑞士节点', 'DIRECT'] },
+        { name: 'Ⓜ️ 微软服务', type: 'select', proxies: ['🎯 全球直连', '🚀 节点选择', '☁️ Snippets', '🇭🇰 香港节点', '🇹🇼 台湾节点', '🇯🇵 日本节点', '🇸🇬 狮城节点', '🇺🇸 美国节点', '🇰🇷 韩国节点', '🇬🇧 英国节点', '🇩🇪 德国节点', '🇫🇷 法国节点', '🇮🇳 印度节点', '🇦🇺 澳洲节点', 'DIRECT'] },
+        { name: '🍎 苹果服务', type: 'select', proxies: ['🎯 全球直连', '🚀 节点选择', '☁️ Snippets', '🇭🇰 香港节点', '🇹🇼 台湾节点', '🇯🇵 日本节点', '🇸🇬 狮城节点', '🇺🇸 美国节点', '🇰🇷 韩国节点', '🇬🇧 英国节点', '🇮🇳 印度节点', '🇦🇺 澳洲节点', 'DIRECT'] },
+        { name: '📢 谷歌FCM', type: 'select', proxies: ['🚀 节点选择', '🎯 全球直连', '♻️ 自动选择', '☑️ 手动切换', '☁️ Snippets', '🇭🇰 香港节点', '🇹🇼 台湾节点', '🇯🇵 日本节点', '🇸🇬 狮城节点', '🇺🇸 美国节点', '🇰🇷 韩国节点', '🇬🇧 英国节点', '🇩🇪 德国节点', '🇮🇳 印度节点', 'DIRECT'] },
+        { name: '🎯 全球直连', type: 'select', proxies: ['DIRECT', '🚀 节点选择', '♻️ 自动选择', '☑️ 手动切换'] },
+        { name: '🛑 全球拦截', type: 'select', proxies: ['REJECT', 'DIRECT'] },
+        { name: '🍃 应用净化', type: 'select', proxies: ['REJECT', 'DIRECT'] },
+        { name: '🐟 漏网之鱼', type: 'select', proxies: ['🚀 节点选择', '🎯 全球直连', '♻️ 自动选择', '☑️ 手动切换', '🇭🇰 香港节点', '🇹🇼 台湾节点', '🇯🇵 日本节点', '🇸🇬 狮城节点', '🇺🇸 美国节点', '🇰🇷 韩国节点', '🇬🇧 英国节点', '🇩🇪 德国节点', '🇫🇷 法国节点', '🇳🇱 荷兰节点', '🇮🇳 印度节点', '🇫🇮 芬兰节点', 'DIRECT'] },
+        { name: '☁️ Snippets', type: 'select', filter: '(snippets|Snippets|Sni|sni|Snip|snip)' },
+        { name: '🇭🇰 香港节点', type: 'select', filter: '(港|HK|hk|Hong Kong|HongKong|hongkong|HKG)' },
+        { name: '🇲🇴 澳门节点', type: 'select', filter: '(澳门|MO|Macau|macao)' },
+        { name: '🇹🇼 台湾节点', type: 'select', filter: '(台|新北|彰化|TW|Taiwan|taipei)' },
+        { name: '🇯🇵 日本节点', type: 'select', filter: '(日本|川日|东京|大阪|泉日|埼玉|沪日|深日|[^-]日|JP|Japan|tokyo|osaka)' },
+        { name: '🇰🇷 韩国节点', type: 'select', filter: '(韩国|韩|KR|Korea|KOR|首尔|seoul|春川)' },
+        { name: '🇲🇳 蒙古节点', type: 'select', filter: '(蒙古|Mongolia|乌兰巴托)' },
+        { name: '🇸🇬 狮城节点', type: 'select', filter: '(新加坡|坡|狮城|SG|Singapore)' },
+        { name: '🇲🇾 马来节点', type: 'select', filter: '(马来西亚|马来|MY|Malaysia|吉隆坡)' },
+        { name: '🇹🇭 泰国节点', type: 'select', filter: '(泰国|TH|Thailand|曼谷)' },
+        { name: '🇻🇳 越南节点', type: 'select', filter: '(越南|VN|Vietnam|胡志明|河内)' },
+        { name: '🇵🇭 菲律宾节点', type: 'select', filter: '(菲律宾|PH|Philippines|马尼拉)' },
+        { name: '🇮🇩 印尼节点', type: 'select', filter: '(印度尼西亚|印尼|ID|Indonesia|雅加达)' },
+        { name: '🇰🇭 柬埔寨节点', type: 'select', filter: '(柬埔寨|Cambodia|金边)' },
+        { name: '🇲🇲 缅甸节点', type: 'select', filter: '(缅甸|Myanmar|仰光)' },
+        { name: '🇱🇦 老挝节点', type: 'select', filter: '(老挝|Laos|万象)' },
+        { name: '🇧🇳 文莱节点', type: 'select', filter: '(文莱|Brunei)' },
+        { name: '🇹🇱 东帝汶节点', type: 'select', filter: '(东帝汶|Timor-Leste)' },
+        { name: '🇮🇳 印度节点', type: 'select', filter: '(印度|India|孟买|新德里|Mumbai|Delhi)' },
+        { name: '🇵🇰 巴基斯坦节点', type: 'select', filter: '(巴基斯坦|Pakistan|卡拉奇|伊斯兰堡)' },
+        { name: '🇧🇩 孟加拉节点', type: 'select', filter: '(孟加拉|Bangladesh|达卡)' },
+        { name: '🇳🇵 尼泊尔节点', type: 'select', filter: '(尼泊尔|Nepal|加德满都)' },
+        { name: '🇱🇰 斯里兰卡节点', type: 'select', filter: '(斯里兰卡|Sri Lanka|科伦坡)' },
+        { name: '🇧🇹 不丹节点', type: 'select', filter: '(不丹|Bhutan)' },
+        { name: '🇲🇻 马尔代夫节点', type: 'select', filter: '(马尔代夫|Maldives|马累)' },
+        { name: '🇦🇫 阿富汗节点', type: 'select', filter: '(阿富汗|Afghanistan|喀布尔)' },
+        { name: '🇰🇿 哈萨克节点', type: 'select', filter: '(哈萨克斯坦|哈萨克|Kazakhstan|阿拉木图)' },
+        { name: '🇺🇿 乌兹别克节点', type: 'select', filter: '(乌兹别克斯坦|乌兹别克|Uzbekistan|塔什干)' },
+        { name: '🇹🇲 土库曼节点', type: 'select', filter: '(土库曼斯坦|土库曼|Turkmenistan)' },
+        { name: '🇹🇯 塔吉克节点', type: 'select', filter: '(塔吉克斯坦|塔吉克|Tajikistan)' },
+        { name: '🇰🇬 吉尔吉斯节点', type: 'select', filter: '(吉尔吉斯斯坦|吉尔吉斯|Kyrgyzstan)' },
+        { name: '🇦🇿 阿塞拜疆节点', type: 'select', filter: '(阿塞拜疆|Azerbaijan|巴库)' },
+        { name: '🇦🇲 亚美尼亚节点', type: 'select', filter: '(亚美尼亚|Armenia|埃里温)' },
+        { name: '🇬🇪 格鲁吉亚节点', type: 'select', filter: '(格鲁吉亚|Georgia|第比利斯)' },
+        { name: '🇦🇪 阿联酋节点', type: 'select', filter: '(阿联酋|United Arab Emirates|迪拜|Dubai|阿布扎比)' },
+        { name: '🇸🇦 沙特节点', type: 'select', filter: '(沙特|Saudi Arabia|沙特阿拉伯|利雅得)' },
+        { name: '🇮🇱 以色列节点', type: 'select', filter: '(以色列|Israel|特拉维夫)' },
+        { name: '🇹🇷 土耳其节点', type: 'select', filter: '(土耳其|Turkey|伊斯坦布尔|安卡拉)' },
+        { name: '🇮🇷 伊朗节点', type: 'select', filter: '(伊朗|Iran|德黑兰)' },
+        { name: '🇮🇶 伊拉克节点', type: 'select', filter: '(伊拉克|Iraq|巴格达)' },
+        { name: '🇶🇦 卡塔尔节点', type: 'select', filter: '(卡塔尔|Qatar|多哈)' },
+        { name: '🇰🇼 科威特节点', type: 'select', filter: '(科威特|Kuwait)' },
+        { name: '🇴🇲 阿曼节点', type: 'select', filter: '(阿曼|Oman|马斯喀特)' },
+        { name: '🇧🇭 巴林节点', type: 'select', filter: '(巴林|Bahrain|麦纳麦)' },
+        { name: '🇯🇴 约旦节点', type: 'select', filter: '(约旦|Jordan|安曼)' },
+        { name: '🇱🇧 黎巴嫩节点', type: 'select', filter: '(黎巴嫩|Lebanon|贝鲁特)' },
+        { name: '🇸🇾 叙利亚节点', type: 'select', filter: '(叙利亚|Syria|大马士革)' },
+        { name: '🇾🇪 也门节点', type: 'select', filter: '(也门|Yemen|萨那)' },
+        { name: '🇵🇸 巴勒斯坦节点', type: 'select', filter: '(巴勒斯坦|Palestine)' },
+        { name: '🇺🇸 美国节点', type: 'select', filter: '(美国|美|波特兰|达拉斯|俄勒冈|凤凰城|费利蒙|硅谷|拉斯维加斯|洛杉矶|圣何塞|圣克拉拉|西雅图|芝加哥|US|USA|United States|ATL|BUF|DFW|EWR|IAD|LAX|MCI|MIA|ORD|PHX|PDX|SEA|SJC)' },
+        { name: '🇨🇦 加拿大节点', type: 'select', filter: '(加拿大|CA|Canada|多伦多|温哥华|蒙特利尔)' },
+        { name: '🇲🇽 墨西哥节点', type: 'select', filter: '(墨西哥|Mexico|墨城)' },
+        { name: '🇵🇦 巴拿马节点', type: 'select', filter: '(巴拿马|Panama)' },
+        { name: '🇨🇷 哥斯达黎加节点', type: 'select', filter: '(哥斯达黎加|Costa Rica)' },
+        { name: '🇬🇹 危地马拉节点', type: 'select', filter: '(危地马拉|Guatemala)' },
+        { name: '🇭🇳 洪都拉斯节点', type: 'select', filter: '(洪都拉斯|Honduras)' },
+        { name: '🇳🇮 尼加拉瓜节点', type: 'select', filter: '(尼加拉瓜|Nicaragua)' },
+        { name: '🇸🇻 萨尔瓦多节点', type: 'select', filter: '(萨尔瓦多|El Salvador)' },
+        { name: '🇧🇿 伯利兹节点', type: 'select', filter: '(伯利兹|Belize)' },
+        { name: '🇨🇺 古巴节点', type: 'select', filter: '(古巴|Cuba|哈瓦那)' },
+        { name: '🇩🇴 多米尼加节点', type: 'select', filter: '(多米尼加|Dominican|圣多明各)' },
+        { name: '🇯🇲 牙买加节点', type: 'select', filter: '(牙买加|Jamaica|金斯敦)' },
+        { name: '🇭🇹 海地节点', type: 'select', filter: '(海地|Haiti)' },
+        { name: '🇧🇸 巴哈马节点', type: 'select', filter: '(巴哈马|Bahamas)' },
+        { name: '🇧🇧 巴巴多斯节点', type: 'select', filter: '(巴巴多斯|Barbados)' },
+        { name: '🇹🇹 特立尼达节点', type: 'select', filter: '(特立尼达|Trinidad)' },
+        { name: '🇵🇷 波多黎各节点', type: 'select', filter: '(波多黎各|Puerto Rico)' },
+        { name: '🇧🇷 巴西节点', type: 'select', filter: '(巴西|Brazil|圣保罗|里约)' },
+        { name: '🇦🇷 阿根廷节点', type: 'select', filter: '(阿根廷|Argentina|布宜诺斯艾利斯)' },
+        { name: '🇨🇱 智利节点', type: 'select', filter: '(智利|Chile|圣地亚哥)' },
+        { name: '🇨🇴 哥伦比亚节点', type: 'select', filter: '(哥伦比亚|Colombia|波哥大)' },
+        { name: '🇵🇪 秘鲁节点', type: 'select', filter: '(秘鲁|Peru|利马)' },
+        { name: '🇻🇪 委内瑞拉节点', type: 'select', filter: '(委内瑞拉|Venezuela|加拉加斯)' },
+        { name: '🇪🇨 厄瓜多尔节点', type: 'select', filter: '(厄瓜多尔|Ecuador|基多)' },
+        { name: '🇺🇾 乌拉圭节点', type: 'select', filter: '(乌拉圭|Uruguay|蒙得维的亚)' },
+        { name: '🇧🇴 玻利维亚节点', type: 'select', filter: '(玻利维亚|Bolivia|拉巴斯)' },
+        { name: '🇵🇾 巴拉圭节点', type: 'select', filter: '(巴拉圭|Paraguay|亚松森)' },
+        { name: '🇬🇾 圭亚那节点', type: 'select', filter: '(圭亚那|Guyana)' },
+        { name: '🇸🇷 苏里南节点', type: 'select', filter: '(苏里南|Suriname)' },
+        { name: '🇬🇫 法属圭亚那节点', type: 'select', filter: '(法属圭亚那|French Guiana)' },
+        { name: '🇬🇧 英国节点', type: 'select', filter: '(英国|UK|GB|United Kingdom|Britain|伦敦|London|曼彻斯特)' },
+        { name: '🇩🇪 德国节点', type: 'select', filter: '(德国|DE|Germany|法兰克福|柏林|慕尼黑|Frankfurt)' },
+        { name: '🇫🇷 法国节点', type: 'select', filter: '(法国|FR|France|巴黎|Paris|马赛)' },
+        { name: '🇳🇱 荷兰节点', type: 'select', filter: '(荷兰|NL|Netherlands|阿姆斯特丹|Amsterdam)' },
+        { name: '🇧🇪 比利时节点', type: 'select', filter: '(比利时|Belgium|布鲁塞尔)' },
+        { name: '🇱🇺 卢森堡节点', type: 'select', filter: '(卢森堡|Luxembourg)' },
+        { name: '🇨🇭 瑞士节点', type: 'select', filter: '(瑞士|Switzerland|苏黎世|日内瓦)' },
+        { name: '🇦🇹 奥地利节点', type: 'select', filter: '(奥地利|Austria|维也纳)' },
+        { name: '🇮🇪 爱尔兰节点', type: 'select', filter: '(爱尔兰|Ireland|都柏林)' },
+        { name: '🇲🇨 摩纳哥节点', type: 'select', filter: '(摩纳哥|Monaco)' },
+        { name: '🇱🇮 列支敦士登节点', type: 'select', filter: '(列支敦士登|Liechtenstein)' },
+        { name: '🇦🇩 安道尔节点', type: 'select', filter: '(安道尔|Andorra)' },
+        { name: '🇸🇪 瑞典节点', type: 'select', filter: '(瑞典|Sweden|斯德哥尔摩)' },
+        { name: '🇳🇴 挪威节点', type: 'select', filter: '(挪威|Norway|奥斯陆)' },
+        { name: '🇫🇮 芬兰节点', type: 'select', filter: '(芬兰|Finland|赫尔辛基)' },
+        { name: '🇩🇰 丹麦节点', type: 'select', filter: '(丹麦|Denmark|哥本哈根)' },
+        { name: '🇮🇸 冰岛节点', type: 'select', filter: '(冰岛|Iceland|雷克雅未克)' },
+        { name: '🇫🇴 法罗群岛节点', type: 'select', filter: '(法罗群岛|Faroe)' },
+        { name: '🇬🇱 格陵兰节点', type: 'select', filter: '(格陵兰|Greenland)' },
+        { name: '🇮🇹 意大利节点', type: 'select', filter: '(意大利|Italy|米兰|罗马|都灵)' },
+        { name: '🇪🇸 西班牙节点', type: 'select', filter: '(西班牙|Spain|马德里|巴塞罗那)' },
+        { name: '🇵🇹 葡萄牙节点', type: 'select', filter: '(葡萄牙|Portugal|里斯本)' },
+        { name: '🇬🇷 希腊节点', type: 'select', filter: '(希腊|Greece|雅典)' },
+        { name: '🇨🇾 塞浦路斯节点', type: 'select', filter: '(塞浦路斯|Cyprus|尼科西亚)' },
+        { name: '🇲🇹 马耳他节点', type: 'select', filter: '(马耳他|Malta|瓦莱塔)' },
+        { name: '🇸🇲 圣马力诺节点', type: 'select', filter: '(圣马力诺|San Marino)' },
+        { name: '🇻🇦 梵蒂冈节点', type: 'select', filter: '(梵蒂冈|Vatican)' },
+        { name: '🇦🇱 阿尔巴尼亚节点', type: 'select', filter: '(阿尔巴尼亚|Albania|地拉那)' },
+        { name: '🇲🇰 北马其顿节点', type: 'select', filter: '(北马其顿|马其顿|North Macedonia)' },
+        { name: '🇽🇰 科索沃节点', type: 'select', filter: '(科索沃|Kosovo)' },
+        { name: '🇲🇪 黑山节点', type: 'select', filter: '(黑山|Montenegro)' },
+        { name: '🇧🇦 波黑节点', type: 'select', filter: '(波黑|波斯尼亚|Bosnia)' },
+        { name: '🇷🇺 俄罗斯节点', type: 'select', filter: '(俄罗斯|俄|RU|Russia|莫斯科|圣彼得堡|Moscow)' },
+        { name: '🇺🇦 乌克兰节点', type: 'select', filter: '(乌克兰|Ukraine|基辅)' },
+        { name: '🇧🇾 白俄罗斯节点', type: 'select', filter: '(白俄罗斯|Belarus|明斯克)' },
+        { name: '🇵🇱 波兰节点', type: 'select', filter: '(波兰|Poland|华沙)' },
+        { name: '🇨🇿 捷克节点', type: 'select', filter: '(捷克|Czech|布拉格)' },
+        { name: '🇸🇰 斯洛伐克节点', type: 'select', filter: '(斯洛伐克|Slovakia|布拉迪斯拉发)' },
+        { name: '🇭🇺 匈牙利节点', type: 'select', filter: '(匈牙利|Hungary|布达佩斯)' },
+        { name: '🇷🇴 罗马尼亚节点', type: 'select', filter: '(罗马尼亚|Romania|布加勒斯特)' },
+        { name: '🇧🇬 保加利亚节点', type: 'select', filter: '(保加利亚|Bulgaria|索非亚)' },
+        { name: '🇲🇩 摩尔多瓦节点', type: 'select', filter: '(摩尔多瓦|Moldova|基希讷乌)' },
+        { name: '🇱🇻 拉脱维亚节点', type: 'select', filter: '(拉脱维亚|Latvia|里加)' },
+        { name: '🇱🇹 立陶宛节点', type: 'select', filter: '(立陶宛|Lithuania|维尔纽斯)' },
+        { name: '🇪🇪 爱沙尼亚节点', type: 'select', filter: '(爱沙尼亚|Estonia|塔林)' },
+        { name: '🇸🇮 斯洛文尼亚节点', type: 'select', filter: '(斯洛文尼亚|Slovenia|卢布尔雅那)' },
+        { name: '🇭🇷 克罗地亚节点', type: 'select', filter: '(克罗地亚|Croatia|萨格勒布)' },
+        { name: '🇷🇸 塞尔维亚节点', type: 'select', filter: '(塞尔维亚|Serbia|贝尔格莱德)' },
+        { name: '🇦🇺 澳洲节点', type: 'select', filter: '(澳洲|澳大利亚|AU|Australia|悉尼|墨尔本|Sydney|Melbourne)' },
+        { name: '🇳🇿 新西兰节点', type: 'select', filter: '(新西兰|New Zealand|奥克兰)' },
+        { name: '🇫🇯 斐济节点', type: 'select', filter: '(斐济|Fiji|苏瓦)' },
+        { name: '🇵🇬 巴新节点', type: 'select', filter: '(巴布亚新几内亚|巴新|Papua New Guinea)' },
+        { name: '🇼🇸 萨摩亚节点', type: 'select', filter: '(萨摩亚|Samoa)' },
+        { name: '🇹🇴 汤加节点', type: 'select', filter: '(汤加|Tonga)' },
+        { name: '🇻🇺 瓦努阿图节点', type: 'select', filter: '(瓦努阿图|Vanuatu)' },
+        { name: '🇸🇧 所罗门群岛节点', type: 'select', filter: '(所罗门群岛|Solomon)' },
+        { name: '🇳🇨 新喀里多尼亚节点', type: 'select', filter: '(新喀里多尼亚|New Caledonia)' },
+        { name: '🇵🇫 法属波利尼西亚节点', type: 'select', filter: '(法属波利尼西亚|French Polynesia|大溪地)' },
+        { name: '🇬🇺 关岛节点', type: 'select', filter: '(关岛|Guam)' },
+        { name: '🇪🇬 埃及节点', type: 'select', filter: '(埃及|Egypt|开罗)' },
+        { name: '🇱🇾 利比亚节点', type: 'select', filter: '(利比亚|Libya|的黎波里)' },
+        { name: '🇹🇳 突尼斯节点', type: 'select', filter: '(突尼斯|Tunisia|突尼斯城)' },
+        { name: '🇩🇿 阿尔及利亚节点', type: 'select', filter: '(阿尔及利亚|Algeria|阿尔及尔)' },
+        { name: '🇲🇦 摩洛哥节点', type: 'select', filter: '(摩洛哥|Morocco|卡萨布兰卡)' },
+        { name: '🇸🇩 苏丹节点', type: 'select', filter: '(苏丹|Sudan|喀土穆)' },
+        { name: '🇳🇬 尼日利亚节点', type: 'select', filter: '(尼日利亚|Nigeria|拉各斯)' },
+        { name: '🇬🇭 加纳节点', type: 'select', filter: '(加纳|Ghana|阿克拉)' },
+        { name: '🇸🇳 塞内加尔节点', type: 'select', filter: '(塞内加尔|Senegal|达喀尔)' },
+        { name: '🇨🇮 科特迪瓦节点', type: 'select', filter: '(科特迪瓦|象牙海岸|Ivory Coast|Cote)' },
+        { name: '🇲🇱 马里节点', type: 'select', filter: '(马里|Mali|巴马科)' },
+        { name: '🇧🇫 布基纳法索节点', type: 'select', filter: '(布基纳法索|Burkina Faso)' },
+        { name: '🇳🇪 尼日尔节点', type: 'select', filter: '(尼日尔|Niger)' },
+        { name: '🇬🇳 几内亚节点', type: 'select', filter: '(几内亚|Guinea)' },
+        { name: '🇹🇬 多哥节点', type: 'select', filter: '(多哥|Togo)' },
+        { name: '🇧🇯 贝宁节点', type: 'select', filter: '(贝宁|Benin)' },
+        { name: '🇱🇷 利比里亚节点', type: 'select', filter: '(利比里亚|Liberia)' },
+        { name: '🇸🇱 塞拉利昂节点', type: 'select', filter: '(塞拉利昂|Sierra Leone)' },
+        { name: '🇲🇷 毛里塔尼亚节点', type: 'select', filter: '(毛里塔尼亚|Mauritania)' },
+        { name: '🇬🇲 冈比亚节点', type: 'select', filter: '(冈比亚|Gambia)' },
+        { name: '🇨🇻 佛得角节点', type: 'select', filter: '(佛得角|Cape Verde)' },
+        { name: '🇨🇲 喀麦隆节点', type: 'select', filter: '(喀麦隆|Cameroon|雅温得)' },
+        { name: '🇨🇩 刚果金节点', type: 'select', filter: '(刚果民主共和国|刚果金|DR Congo)' },
+        { name: '🇨🇬 刚果共和国', type: 'select', filter: '(刚果共和国|刚果布|Congo)' },
+        { name: '🇨🇫 中非节点', type: 'select', filter: '(中非共和国|中非|Central African)' },
+        { name: '🇹🇩 乍得节点', type: 'select', filter: '(乍得|Chad)' },
+        { name: '🇬🇦 加蓬节点', type: 'select', filter: '(加蓬|Gabon)' },
+        { name: '🇬🇶 赤道几内亚节点', type: 'select', filter: '(赤道几内亚|Equatorial Guinea)' },
+        { name: '🇰🇪 肯尼亚节点', type: 'select', filter: '(肯尼亚|Kenya|内罗毕)' },
+        { name: '🇹🇿 坦桑尼亚节点', type: 'select', filter: '(坦桑尼亚|Tanzania|达累斯萨拉姆)' },
+        { name: '🇺🇬 乌干达节点', type: 'select', filter: '(乌干达|Uganda|坎帕拉)' },
+        { name: '🇷🇼 卢旺达节点', type: 'select', filter: '(卢旺达|Rwanda|基加利)' },
+        { name: '🇧🇮 布隆迪节点', type: 'select', filter: '(布隆迪|Burundi)' },
+        { name: '🇪🇹 埃塞俄比亚节点', type: 'select', filter: '(埃塞俄比亚|Ethiopia|亚的斯亚贝巴)' },
+        { name: '🇪🇷 厄立特里亚节点', type: 'select', filter: '(厄立特里亚|Eritrea)' },
+        { name: '🇩🇯 吉布提节点', type: 'select', filter: '(吉布提|Djibouti)' },
+        { name: '🇸🇴 索马里节点', type: 'select', filter: '(索马里|Somalia)' },
+        { name: '🇲🇬 马达加斯加节点', type: 'select', filter: '(马达加斯加|Madagascar)' },
+        { name: '🇲🇺 毛里求斯节点', type: 'select', filter: '(毛里求斯|Mauritius)' },
+        { name: '🇸🇨 塞舌尔节点', type: 'select', filter: '(塞舌尔|Seychelles)' },
+        { name: '🇰🇲 科摩罗节点', type: 'select', filter: '(科摩罗|Comoros)' },
+        { name: '🇷🇪 留尼汪节点', type: 'select', filter: '(留尼汪|Reunion)' },
+        { name: '🇿🇦 南非节点', type: 'select', filter: '(南非|South Africa|约翰内斯堡|开普敦)' },
+        { name: '🇿🇼 津巴布韦节点', type: 'select', filter: '(津巴布韦|Zimbabwe|哈拉雷)' },
+        { name: '🇿🇲 赞比亚节点', type: 'select', filter: '(赞比亚|Zambia|卢萨卡)' },
+        { name: '🇲🇼 马拉维节点', type: 'select', filter: '(马拉维|Malawi)' },
+        { name: '🇲🇿 莫桑比克节点', type: 'select', filter: '(莫桑比克|Mozambique|马普托)' },
+        { name: '🇧🇼 博茨瓦纳节点', type: 'select', filter: '(博茨瓦纳|Botswana)' },
+        { name: '🇳🇦 纳米比亚节点', type: 'select', filter: '(纳米比亚|Namibia|温得和克)' },
+        { name: '🇦🇴 安哥拉节点', type: 'select', filter: '(安哥拉|Angola|罗安达)' },
+        { name: '🇸🇿 斯威士兰节点', type: 'select', filter: '(斯威士兰|Eswatini|Swaziland)' },
+        { name: '🇱🇸 莱索托节点', type: 'select', filter: '(莱索托|Lesotho)' }
+    ]
+};
+
+/**
+ * Subscription Parser
+ */
+class SubParser {
+    // UTF-8 safe Base64 decode
+    base64DecodeUtf8(str) {
+        try {
+            const binaryStr = atob(str);
+            const bytes = new Uint8Array(binaryStr.length);
+            for (let i = 0; i < binaryStr.length; i++) {
+                bytes[i] = binaryStr.charCodeAt(i);
+            }
+            return new TextDecoder('utf-8').decode(bytes);
+        } catch (e) {
+            return atob(str); // fallback
+        }
+    }
+
+    parse(content) {
+        const trimmed = content.trim();
+
+        // Try YAML
+        if (trimmed.startsWith('proxies:') || trimmed.includes('\nproxies:')) {
+            return this.parseYaml(content);
+        }
+
+        // Try Base64
+        try {
+            const decoded = this.base64DecodeUtf8(trimmed);
+            if (decoded.includes('://') || decoded.includes('\n')) {
+                return this.parseUriList(decoded);
+            }
+        } catch (e) { }
+
+        // Try URI list
+        if (trimmed.includes('://')) {
+            return this.parseUriList(trimmed);
+        }
+
+        return [];
+    }
+
+    parseYaml(content) {
+        try {
+            const match = content.match(/proxies:\s*\n([\s\S]+?)(?:\nproxy-groups:|$)/);
+            if (!match) return [];
+
+            const proxiesSection = match[1];
+            const proxies = [];
+            const proxyMatches = proxiesSection.matchAll(/^\s*-\s*\{([^}]+)\}/gm);
+
+            for (const m of proxyMatches) {
+                try {
+                    const proxyStr = `{${m[1]}}`;
+                    const proxy = this.parseYamlProxy(proxyStr);
+                    if (proxy) proxies.push(proxy);
+                } catch (e) { }
+            }
+
+            return proxies;
+        } catch (e) {
+            return [];
+        }
+    }
+
+    parseYamlProxy(str) {
+        const obj = {};
+        const pairs = str.slice(1, -1).split(',');
+        for (const pair of pairs) {
+            const [key, ...vals] = pair.split(':');
+            if (key && vals.length) {
+                obj[key.trim()] = vals.join(':').trim().replace(/^["']|["']$/g, '');
+            }
+        }
+        return obj.name ? obj : null;
+    }
+
+    parseUriList(content) {
+        const proxies = [];
+        const lines = content.split('\n').filter(l => l.trim());
+
+        for (const line of lines) {
+            const proxy = this.parseUri(line.trim());
+            if (proxy) proxies.push(proxy);
+        }
+
+        return proxies;
+    }
+
+    parseUri(uri) {
+        if (uri.startsWith('vmess://')) return this.parseVmess(uri);
+        if (uri.startsWith('vless://')) return this.parseVless(uri);
+        if (uri.startsWith('trojan://')) return this.parseTrojan(uri);
+        if (uri.startsWith('ss://')) return this.parseShadowsocks(uri);
+        if (uri.startsWith('hysteria2://') || uri.startsWith('hy2://')) return this.parseHysteria2(uri);
+        if (uri.startsWith('tuic://')) return this.parseTuic(uri);
+        return null;
+    }
+
+    parseVmess(uri) {
+        try {
+            const encoded = uri.replace('vmess://', '');
+            const decoded = atob(encoded);
+            const config = JSON.parse(decoded);
+
+            const proxy = {
+                name: config.ps || config.name || 'VMess',
+                type: 'vmess',
+                server: config.add || config.server,
+                port: parseInt(config.port),
+                uuid: config.id || config.uuid,
+                alterId: parseInt(config.aid) || 0,
+                cipher: config.scy || 'auto',
+                tls: config.tls === 'tls',
+                'skip-cert-verify': true,
+                network: config.net || 'tcp'
+            };
+
+            if (config.net === 'ws') {
+                proxy['ws-opts'] = {
+                    path: config.path || '/',
+                    headers: config.host ? { Host: config.host } : {}
+                };
+            }
+
+            return proxy;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    parseVless(uri) {
+        try {
+            const url = new URL(uri);
+            const params = url.searchParams;
+
+            const proxy = {
+                name: decodeURIComponent(url.hash.substring(1)) || 'VLESS',
+                type: 'vless',
+                server: url.hostname,
+                port: parseInt(url.port) || 443,
+                uuid: url.username,
+                tls: params.get('security') === 'tls' || params.get('security') === 'reality',
+                'skip-cert-verify': false,
+                network: params.get('type') || 'tcp'
+            };
+
+            // 解析 flow (xtls-rprx-vision 等)
+            const flow = params.get('flow');
+            if (flow) {
+                proxy.flow = flow;
+            }
+
+            // 解析 client-fingerprint (fp 参数)
+            const fingerprint = params.get('fp');
+            if (fingerprint) {
+                proxy['client-fingerprint'] = fingerprint;
+            }
+
+            if (proxy.tls) {
+                proxy.servername = params.get('sni') || url.hostname;
+                if (params.get('security') === 'reality') {
+                    proxy['reality-opts'] = {
+                        'public-key': params.get('pbk'),
+                        'short-id': params.get('sid') || ''
+                    };
+                }
+            }
+
+            if (proxy.network === 'ws') {
+                const host = params.get('host') || params.get('sni') || url.hostname;
+                proxy['ws-opts'] = {
+                    path: params.get('path') || '/',
+                    headers: host ? { Host: host } : {}
+                };
+            }
+
+            return proxy;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    parseTrojan(uri) {
+        try {
+            const url = new URL(uri);
+            const params = url.searchParams;
+
+            const proxy = {
+                name: decodeURIComponent(url.hash.substring(1)) || 'Trojan',
+                type: 'trojan',
+                server: url.hostname,
+                port: parseInt(url.port) || 443,
+                password: url.username,
+                sni: params.get('sni') || url.hostname,
+                'skip-cert-verify': true,
+                network: params.get('type') || 'tcp'
+            };
+
+            if (proxy.network === 'ws') {
+                proxy['ws-opts'] = {
+                    path: params.get('path') || '/',
+                    headers: params.get('host') ? { Host: params.get('host') } : {}
+                };
+            }
+
+            return proxy;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    parseShadowsocks(uri) {
+        try {
+            const urlObj = new URL(uri);
+            const params = urlObj.searchParams;
+            let content = uri.replace('ss://', '').split('?')[0]; 
+            let name = decodeURIComponent(urlObj.hash.substring(1)) || 'Shadowsocks';
+
+            let method, password, server, port;
+
+            if (content.includes('@')) {
+                const [authPart, serverPart] = content.split('@');
+                try {
+                    const decoded = atob(authPart);
+                    [method, password] = decoded.split(':');
+                } catch {
+                    [method, password] = authPart.split(':');
+                }
+                const [s, p] = serverPart.split(':');
+                server = s;
+                port = p;
+            } else {
+                try {
+                    const decoded = atob(content);
+                    const atIndex = decoded.lastIndexOf('@');
+                    const [authPart, serverPart] = [decoded.substring(0, atIndex), decoded.substring(atIndex + 1)];
+                    [method, password] = authPart.split(':');
+                    const colonIndex = serverPart.lastIndexOf(':');
+                    server = serverPart.substring(0, colonIndex);
+                    port = serverPart.substring(colonIndex + 1);
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            const proxy = {
+                name,
+                type: 'ss',
+                server,
+                port: parseInt(port),
+                cipher: method,
+                password
+            };
+
+            let pluginStr = params.get('plugin');
+
+            const match = uri.match(/[?&]plugin=([^#]+)/);
+            if (match) {
+                const rawPlugin = match[1];
+                if (rawPlugin.includes('path=') || rawPlugin.includes('obfs-host=')) {
+                    pluginStr = rawPlugin;
+                }
+            }
+
+            if (pluginStr) {
+                const pluginParts = decodeURIComponent(pluginStr).split(';');
+                proxy.plugin = pluginParts[0];
+                proxy['plugin-opts'] = {};
+
+                for (let i = 1; i < pluginParts.length; i++) {
+                    const part = pluginParts[i];
+                    const equalsIndex = part.indexOf('=');
+                    if (equalsIndex !== -1) {
+                        const key = part.substring(0, equalsIndex);
+                        let val = part.substring(equalsIndex + 1);
+                        try {
+                            if (val.includes('%')) {
+                                val = decodeURIComponent(val);
+                            }
+                        } catch (e) { }
+                        proxy['plugin-opts'][key] = val;
+                    } else {
+                        proxy['plugin-opts'][part] = true;
+                    }
+                }
+
+                if (proxy.plugin === 'v2ray-plugin' || proxy.plugin === 'obfs-local') {
+                    if (proxy['plugin-opts'].tls === 'true' || proxy['plugin-opts'].tls === true) {
+                        proxy['plugin-opts'].tls = true;
+                        if (proxy['skip-cert-verify'] === true || proxy['plugin-opts']['skip-cert-verify'] === 'true') {
+                            proxy['plugin-opts'].allowInsecure = true;
+                        }
+                    }
+
+                    proxy['plugin-opts'].mux = false;
+
+                    if (proxy['plugin-opts'].host) {
+                        proxy['plugin-opts'].peer = proxy['plugin-opts'].host;
+                    } else if (params.get('sni')) {
+                        proxy['plugin-opts'].peer = params.get('sni');
+                        proxy['plugin-opts'].host = params.get('sni');
+                    }
+                }
+            }
+
+            const fingerprint = params.get('fingerprint') || params.get('client-fingerprint');
+            if (fingerprint) {
+                proxy['client-fingerprint'] = fingerprint;
+            }
+
+            return proxy;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    parseHysteria2(uri) {
+        try {
+            const url = new URL(uri.replace('hy2://', 'hysteria2://'));
+            const params = url.searchParams;
+
+            return {
+                name: decodeURIComponent(url.hash.substring(1)) || 'Hysteria2',
+                type: 'hysteria2',
+                server: url.hostname,
+                port: parseInt(url.port) || 443,
+                password: url.username,
+                sni: params.get('sni') || url.hostname,
+                'skip-cert-verify': true
+            };
+        } catch (e) {
+            return null;
+        }
+    }
+
+    parseTuic(uri) {
+        try {
+            const url = new URL(uri);
+            const params = url.searchParams;
+            const [uuid, password] = url.username.split(':');
+
+            return {
+                name: decodeURIComponent(url.hash.substring(1)) || 'TUIC',
+                type: 'tuic',
+                server: url.hostname,
+                port: parseInt(url.port) || 443,
+                uuid: uuid,
+                password: password || url.password,
+                sni: params.get('sni') || url.hostname,
+                'skip-cert-verify': true,
+                'congestion-controller': params.get('congestion_control') || 'bbr'
+            };
+        } catch (e) {
+            return null;
+        }
+    }
+
+    addEmoji(proxy) {
+        const name = proxy.name;
+        const emojiMap = {
+            '🇭🇰': ['香港', 'HK', 'hk', 'Hong Kong', 'HongKong', 'hongkong', 'HKG'],
+            '🇲🇴': ['澳门', 'MO', 'Macau', 'macao'],
+            '🇹🇼': ['台湾', '新北', '彰化', 'TW', 'Taiwan', 'taipei'],
+            '🇯🇵': ['日本', '川日', '东京', '大阪', '泉日', '埼玉', '沪日', '深日', '[^-]日', 'JP', 'Japan', 'tokyo', 'osaka'],
+            '🇰🇷': ['韩国', '韩', 'KR', 'Korea', 'KOR', '首尔', 'seoul', '春川'],
+            '🇲🇳': ['蒙古', 'Mongolia', '乌兰巴托'],
+            '🇸🇬': ['新加坡', '坡', '狮城', 'SG', 'Singapore'],
+            '🇲🇾': ['马来西亚', '马来', 'MY', 'Malaysia', '吉隆坡'],
+            '🇹🇭': ['泰国', 'TH', 'Thailand', '曼谷'],
+            '🇻🇳': ['越南', 'VN', 'Vietnam', '胡志明', '河内'],
+            '🇵🇭': ['菲律宾', 'PH', 'Philippines', '马尼拉'],
+            '🇮🇩': ['印度尼西亚', '印尼', 'ID', 'Indonesia', '雅加达'],
+            '🇰🇭': ['柬埔寨', 'Cambodia', '金边'],
+            '🇲🇲': ['缅甸', 'Myanmar', '仰光'],
+            '🇱🇦': ['老挝', 'Laos', '万象'],
+            '🇧🇳': ['文莱', 'Brunei'],
+            '🇹🇱': ['东帝汶', 'Timor-Leste'],
+            '🇮🇳': ['印度', 'India', '孟买', '新德里', 'Mumbai', 'Delhi'],
+            '🇵🇰': ['巴基斯坦', 'Pakistan', '卡拉奇', '伊斯兰堡'],
+            '🇧🇩': ['孟加拉', 'Bangladesh', '达卡'],
+            '🇳🇵': ['尼泊尔', 'Nepal', '加德满都'],
+            '🇱🇰': ['斯里兰卡', 'Sri Lanka', '科伦坡'],
+            '🇧🇹': ['不丹', 'Bhutan'],
+            '🇲🇻': ['马尔代夫', 'Maldives', '马累'],
+            '🇦🇫': ['阿富汗', 'Afghanistan', '喀布尔'],
+            '🇰🇿': ['哈萨克斯坦', '哈萨克', 'Kazakhstan', '阿拉木图'],
+            '🇺🇿': ['乌兹别克斯坦', '乌兹别克', 'Uzbekistan', '塔什干'],
+            '🇹🇲': ['土库曼斯坦', '土库曼', 'Turkmenistan'],
+            '🇹🇯': ['塔吉克斯坦', '塔吉克', 'Tajikistan'],
+            '🇰🇬': ['吉尔吉斯斯坦', '吉尔吉斯', 'Kyrgyzstan'],
+            '🇦🇿': ['阿塞拜疆', 'Azerbaijan', '巴库'],
+            '🇦🇲': ['亚美尼亚', 'Armenia', '埃里温'],
+            '🇬🇪': ['格鲁吉亚', 'Georgia', '第比利斯'],
+            '🇦🇪': ['阿联酋', 'United Arab Emirates', '迪拜', 'Dubai', '阿布扎比'],
+            '🇸🇦': ['沙特', 'Saudi Arabia', '沙特阿拉伯', '利雅得'],
+            '🇮🇱': ['以色列', 'Israel', '特拉维夫'],
+            '🇹🇷': ['土耳其', 'Turkey', '伊斯坦布尔', '安卡拉'],
+            '🇮🇷': ['伊朗', 'Iran', '德黑兰'],
+            '🇮🇶': ['伊拉克', 'Iraq', '巴格达'],
+            '🇶🇦': ['卡塔尔', 'Qatar', '多哈'],
+            '🇰🇼': ['科威特', 'Kuwait'],
+            '🇴🇲': ['阿曼', 'Oman', '马斯喀特'],
+            '🇧🇭': ['巴林', 'Bahrain', '麦纳麦'],
+            '🇯🇴': ['约旦', 'Jordan', '安曼'],
+            '🇱🇧': ['黎巴嫩', 'Lebanon', '贝鲁特'],
+            '🇸🇾': ['叙利亚', 'Syria', '大马士革'],
+            '🇾🇪': ['也门', 'Yemen', '萨那'],
+            '🇵🇸': ['巴勒斯坦', 'Palestine'],
+            '🇺🇸': ['美国', '美', '波特兰', '达拉斯', '俄勒冈', '凤凰城', '费利蒙', '硅谷', '拉斯维加斯', '洛杉矶', '圣何塞', '圣克拉拉', '西雅图', '芝加哥', 'US', 'USA', 'United States', 'ATL', 'BUF', 'DFW', 'EWR', 'IAD', 'LAX', 'MCI', 'MIA', 'ORD', 'PHX', 'PDX', 'SEA', 'SJC'],
+            '🇨🇦': ['加拿大', 'CA', 'Canada', '多伦多', '温哥华', '蒙特利尔'],
+            '🇲🇽': ['墨西哥', 'Mexico', '墨城'],
+            '🇵🇦': ['巴拿马', 'Panama'],
+            '🇨🇷': ['哥斯达黎加', 'Costa Rica'],
+            '🇬🇹': ['危地马拉', 'Guatemala'],
+            '🇭🇳': ['洪都拉斯', 'Honduras'],
+            '🇳🇮': ['尼加拉瓜', 'Nicaragua'],
+            '🇸🇻': ['萨尔瓦多', 'El Salvador'],
+            '🇧🇿': ['伯利兹', 'Belize'],
+            '🇨🇺': ['古巴', 'Cuba', '哈瓦那'],
+            '🇩🇴': ['多米尼加', 'Dominican', '圣多明各'],
+            '🇯🇲': ['牙买加', 'Jamaica', '金斯敦'],
+            '🇭🇹': ['海地', 'Haiti'],
+            '🇧🇸': ['巴哈马', 'Bahamas'],
+            '🇧🇧': ['巴巴多斯', 'Barbados'],
+            '🇹🇹': ['特立尼达', 'Trinidad'],
+            '🇵🇷': ['波多黎各', 'Puerto Rico'],
+            '🇧🇷': ['巴西', 'Brazil', '圣保罗', '里约'],
+            '🇦🇷': ['阿根廷', 'Argentina', '布宜诺斯艾利斯'],
+            '🇨🇱': ['智利', 'Chile', '圣地亚哥'],
+            '🇨🇴': ['哥伦比亚', 'Colombia', '波哥大'],
+            '🇵🇪': ['秘鲁', 'Peru', '利马'],
+            '🇻🇪': ['委内瑞拉', 'Venezuela', '加拉加斯'],
+            '🇪🇨': ['厄瓜多尔', 'Ecuador', '基多'],
+            '🇺🇾': ['乌拉圭', 'Uruguay', '蒙得维的亚'],
+            '🇧🇴': ['玻利维亚', 'Bolivia', '拉巴斯'],
+            '🇵🇾': ['巴拉圭', 'Paraguay', '亚松森'],
+            '🇬🇾': ['圭亚那', 'Guyana'],
+            '🇸🇷': ['苏里南', 'Suriname'],
+            '🇬🇫': ['法属圭亚那', 'French Guiana'],
+            '🇬🇧': ['英国', 'UK', 'GB', 'United Kingdom', 'Britain', '伦敦', 'London', '曼彻斯特'],
+            '🇩🇪': ['德国', 'DE', 'Germany', '法兰克福', '柏林', '慕尼黑', 'Frankfurt'],
+            '🇫🇷': ['法国', 'FR', 'France', '巴黎', 'Paris', '马赛'],
+            '🇳🇱': ['荷兰', 'NL', 'Netherlands', '阿姆斯特丹', 'Amsterdam'],
+            '🇧🇪': ['比利时', 'Belgium', '布鲁塞尔'],
+            '🇱🇺': ['卢森堡', 'Luxembourg'],
+            '🇨🇭': ['瑞士', 'Switzerland', '苏黎世', '日内瓦'],
+            '🇦🇹': ['奥地利', 'Austria', '维也纳'],
+            '🇮🇪': ['爱尔兰', 'Ireland', '都柏林'],
+            '🇲🇨': ['摩纳哥', 'Monaco'],
+            '🇱🇮': ['列支敦士登', 'Liechtenstein'],
+            '🇦🇩': ['安道尔', 'Andorra'],
+            '🇸🇪': ['瑞典', 'Sweden', '斯德哥尔摩'],
+            '🇳🇴': ['挪威', 'Norway', '奥斯陆'],
+            '🇫🇮': ['芬兰', 'Finland', '赫尔辛基'],
+            '🇩🇰': ['丹麦', 'Denmark', '哥本哈根'],
+            '🇮🇸': ['冰岛', 'Iceland', '雷克雅未克'],
+            '🇫🇴': ['法罗群岛', 'Faroe'],
+            '🇬🇱': ['格陵兰', 'Greenland'],
+            '🇮🇹': ['意大利', 'Italy', '米兰', '罗马', '都灵'],
+            '🇪🇸': ['西班牙', 'Spain', '马德里', '巴塞罗那'],
+            '🇵🇹': ['葡萄牙', 'Portugal', '里斯本'],
+            '🇬🇷': ['希腊', 'Greece', '雅典'],
+            '🇨🇾': ['塞浦路斯', 'Cyprus', '尼科西亚'],
+            '🇲🇹': ['马耳他', 'Malta', '瓦莱塔'],
+            '🇸🇲': ['圣马力诺', 'San Marino'],
+            '🇻🇦': ['梵蒂冈', 'Vatican'],
+            '🇦🇱': ['阿尔巴尼亚', 'Albania', '地拉那'],
+            '🇲🇰': ['北马其顿', '马其顿', 'North Macedonia'],
+            '🇽🇰': ['科索沃', 'Kosovo'],
+            '🇲🇪': ['黑山', 'Montenegro'],
+            '🇧🇦': ['波黑', '波斯尼亚', 'Bosnia'],
+            '🇷🇺': ['俄罗斯', '俄', 'RU', 'Russia', '莫斯科', '圣彼得堡', 'Moscow'],
+            '🇺🇦': ['乌克兰', 'Ukraine', '基辅'],
+            '🇧🇾': ['白俄罗斯', 'Belarus', '明斯克'],
+            '🇵🇱': ['波兰', 'Poland', '华沙'],
+            '🇨🇿': ['捷克', 'Czech', '布拉格'],
+            '🇸🇰': ['斯洛伐克', 'Slovakia', '布拉迪斯拉发'],
+            '🇭🇺': ['匈牙利', 'Hungary', '布达佩斯'],
+            '🇷🇴': ['罗马尼亚', 'Romania', '布加勒斯特'],
+            '🇧🇬': ['保加利亚', 'Bulgaria', '索非亚'],
+            '🇲🇩': ['摩尔多瓦', 'Moldova', '基希讷乌'],
+            '🇱🇻': ['拉脱维亚', 'Latvia', '里加'],
+            '🇱🇹': ['立陶宛', 'Lithuania', '维尔纽斯'],
+            '🇪🇪': ['爱沙尼亚', 'Estonia', '塔林'],
+            '🇸🇮': ['斯洛文尼亚', 'Slovenia', '卢布尔雅那'],
+            '🇭🇷': ['克罗地亚', 'Croatia', '萨格勒布'],
+            '🇷🇸': ['塞尔维亚', 'Serbia', '贝尔格莱德'],
+            '🇦🇺': ['澳洲', '澳大利亚', 'AU', 'Australia', '悉尼', '墨尔本', 'Sydney', 'Melbourne'],
+            '🇳🇿': ['新西兰', 'New Zealand', '奥克兰'],
+            '🇫🇯': ['斐济', 'Fiji', '苏瓦'],
+            '🇵🇬': ['巴布亚新几内亚', '巴新', 'Papua New Guinea'],
+            '🇼🇸': ['萨摩亚', 'Samoa'],
+            '🇹🇴': ['汤加', 'Tonga'],
+            '🇻🇺': ['瓦努阿图', 'Vanuatu'],
+            '🇸🇧': ['所罗门群岛', 'Solomon'],
+            '🇳🇨': ['新喀里多尼亚', 'New Caledonia'],
+            '🇵🇫': ['法属波利尼西亚', 'French Polynesia', '大溪地'],
+            '🇬🇺': ['关岛', 'Guam'],
+            '🇪🇬': ['埃及', 'Egypt', '开罗'],
+            '🇱🇾': ['利比亚', 'Libya', '的黎波里'],
+            '🇹🇳': ['突尼斯', 'Tunisia', '突尼斯城'],
+            '🇩🇿': ['阿尔及利亚', 'Algeria', '阿尔及尔'],
+            '🇲🇦': ['摩洛哥', 'Morocco', '卡萨布兰卡'],
+            '🇸🇩': ['苏丹', 'Sudan', '喀土穆'],
+            '🇳🇬': ['尼日利亚', 'Nigeria', '拉各斯'],
+            '🇬🇭': ['加纳', 'Ghana', '阿克拉'],
+            '🇸🇳': ['塞内加尔', 'Senegal', '达喀尔'],
+            '🇨🇮': ['科特迪瓦', '象牙海岸', 'Ivory Coast', 'Cote'],
+            '🇲🇱': ['马里', 'Mali', '巴马科'],
+            '🇧🇫': ['布基纳法索', 'Burkina Faso'],
+            '🇳🇪': ['尼日尔', 'Niger'],
+            '🇬🇳': ['几内亚', 'Guinea'],
+            '🇹🇬': ['多哥', 'Togo'],
+            '🇧🇯': ['贝宁', 'Benin'],
+            '🇱🇷': ['利比里亚', 'Liberia'],
+            '🇸🇱': ['塞拉利昂', 'Sierra Leone'],
+            '🇲🇷': ['毛里塔尼亚', 'Mauritania'],
+            '🇬🇲': ['冈比亚', 'Gambia'],
+            '🇨🇻': ['佛得角', 'Cape Verde'],
+            '🇨🇲': ['喀麦隆', 'Cameroon', '雅温得'],
+            '🇨🇩': ['刚果民主共和国', '刚果金', 'DR Congo'],
+            '🇨🇬': ['刚果共和国', '刚果布', 'Congo'],
+            '🇨🇫': ['中非共和国', '中非', 'Central African'],
+            '🇹🇩': ['乍得', 'Chad'],
+            '🇬🇦': ['加蓬', 'Gabon'],
+            '🇬🇶': ['赤道几内亚', 'Equatorial Guinea'],
+            '🇰🇪': ['肯尼亚', 'Kenya', '内罗毕'],
+            '🇹🇿': ['坦桑尼亚', 'Tanzania', '达累斯萨拉姆'],
+            '🇺🇬': ['乌干达', 'Uganda', '坎帕拉'],
+            '🇷🇼': ['卢旺达', 'Rwanda', '基加利'],
+            '🇧🇮': ['布隆迪', 'Burundi'],
+            '🇪🇹': ['埃塞俄比亚', 'Ethiopia', '亚的斯亚贝巴'],
+            '🇪🇷': ['厄立特里亚', 'Eritrea'],
+            '🇩🇯': ['吉布提', 'Djibouti'],
+            '🇸🇴': ['索马里', 'Somalia'],
+            '🇲🇬': ['马达加斯加', 'Madagascar'],
+            '🇲🇺': ['毛里求斯', 'Mauritius'],
+            '🇸🇨': ['塞舌尔', 'Seychelles'],
+            '🇰🇲': ['科摩罗', 'Comoros'],
+            '🇷🇪': ['留尼汪', 'Reunion'],
+            '🇿🇦': ['南非', 'South Africa', '约翰内斯堡', '开普敦'],
+            '🇿🇼': ['津巴布韦', 'Zimbabwe', '哈拉雷'],
+            '🇿🇲': ['赞比亚', 'Zambia', '卢萨卡'],
+            '🇲🇼': ['马拉维', 'Malawi'],
+            '🇲🇿': ['莫桑比克', 'Mozambique', '马普托'],
+            '🇧🇼': ['博茨瓦纳', 'Botswana'],
+            '🇳🇦': ['纳米比亚', 'Namibia', '温得和克'],
+            '🇦🇴': ['安哥拉', 'Angola', '罗安达'],
+            '🇸🇿': ['斯威士兰', 'Eswatini', 'Swaziland'],
+            '🇱🇸': ['莱索托', 'Lesotho']
+        };
+
+        for (const [emoji, keywords] of Object.entries(emojiMap)) {
+            for (const keyword of keywords) {
+                if (name.includes(keyword)) {
+                    if (!/^[\uD83C][\uDDE6-\uDDFF][\uD83C][\uDDE6-\uDDFF]/.test(name)) {
+                        proxy.name = `${emoji} ${name}`;
+                    }
+                    return proxy;
+                }
+            }
+        }
+        return proxy;
+    }
+}
+
+/**
+ * Clash Generator
+ */
+class ClashGenerator {
+    constructor(config) {
+        this.config = config;
+    }
+
+    async generate(proxies, useMeta = false) {
+        // 去重节点 (按 name + server + port)
+        const uniqueProxies = this.deduplicateProxies(proxies);
+
+        let yaml = \`# Clash Config Generated by Subscription Converter
+port: 7890
+socks-port: 7891
+allow-lan: false
+mode: rule
+log-level: info
+geodata-mode: true
+geo-auto-update: true
+geodata-loader: standard
+geo-update-interval: 24
+geox-url:
+  geoip: https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat
+  geosite: https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat
+  mmdb: https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/country.mmdb
+  asn: https://github.com/xishang0128/geoip/releases/download/latest/GeoLite2-ASN.mmdb
+
+dns:
+  enable: true
+  ipv6: true
+  respect-rules: true
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter:
+    - "*.lan"
+    - "*.local"
+    - "time.*.com"
+    - "ntp.*.com"
+    - "+.pool.ntp.org"
+  nameserver:
+    - https://120.53.53.53/dns-query
+    - https://223.5.5.5/dns-query
+  proxy-server-nameserver:
+    - https://120.53.53.53/dns-query
+    - https://223.5.5.5/dns-query
+  nameserver-policy:
+    geosite:cn,private:
+      - https://120.53.53.53/dns-query
+      - https://223.5.5.5/dns-query
+    geosite:geolocation-!cn:
+      - https://dns.cloudflare.com/dns-query
+      - https://dns.google/dns-query
+
+proxies:
+\`;
+
+        // 添加节点
+        const existingNames = new Set();
+        for (const proxy of uniqueProxies) {
+            yaml += this.proxyToYaml(proxy, existingNames);
+        }
+
+        // 更新 proxyNames 为最终去重后的名字，用于分组
+        const finalProxyNames = Array.from(existingNames);
+        const proxyGroups = this.generateProxyGroups(finalProxyNames);
+        yaml += '\nproxy-groups:\n';
+        for (const group of proxyGroups) {
+            yaml += this.proxyGroupToYaml(group);
+        }
+
+        // 添加内联规则 (fetch and inline)
+        yaml += '\nrules:\n';
+        const inlineRules = await this.fetchInlineRules();
+        for (const rule of inlineRules) {
+            yaml += \`  - \${rule}\n\`;
+        }
+
+        return yaml;
+    }
+
+    async fetchInlineRules() {
+        const allRules = [];
+
+        // Fetch all remote rulesets in parallel
+        const fetchPromises = this.config.rulesets.map(async (rs) => {
+            let group = rs.group;
+            if (this.removedGroups && this.removedGroups.has(group)) {
+                group = 'DIRECT';
+            }
+
+            if (rs.isBuiltin) {
+                // Built-in rules (GEOIP, FINAL)
+                if (rs.type === 'GEOIP') {
+                    return [\`GEOIP,\${rs.value},\${group}\`];
+                } else if (rs.type === 'FINAL') {
+                    return [\`MATCH,\${group}\`];
+                }
+                return [];
+            }
+
+            // Fetch remote ruleset
+            try {
+                const response = await fetch(rs.source, {
+                    headers: { 'User-Agent': 'ClashSubConverter/1.0' }
+                });
+                if (!response.ok) {
+                    console.error(\`Failed to fetch ruleset: \${rs.source}\`);
+                    return [];
+                }
+                const text = await response.text();
+                const rules = this.parseRuleList(text, group);
+                return rules;
+            } catch (e) {
+                console.error(\`Error fetching ruleset \${rs.source}:\`, e);
+                return [];
+            }
+        });
+
+        const results = await Promise.all(fetchPromises);
+        for (const rules of results) {
+            allRules.push(...rules);
+        }
+
+        return allRules;
+    }
+
+    parseRuleList(text, group) {
+        const rules = [];
+        const lines = text.split('\n');
+        // Options that are NOT proxy groups
+        const ruleOptions = ['no-resolve', 'src', 'dst'];
+
+        for (let line of lines) {
+            line = line.trim();
+            // Skip empty lines and comments
+            if (!line || line.startsWith('#') || line.startsWith('//') || line.startsWith(';')) {
+                continue;
+            }
+
+            // Check if line already has a policy/group
+            // Format: TYPE,VALUE or TYPE,VALUE,POLICY or TYPE,VALUE,POLICY,no-resolve
+            const parts = line.split(',');
+            if (parts.length >= 2) {
+                const ruleType = parts[0].toUpperCase();
+                // Supported rule types
+                const supportedTypes = [
+                    'DOMAIN', 'DOMAIN-SUFFIX', 'DOMAIN-KEYWORD', 'DOMAIN-REGEX',
+                    'IP-CIDR', 'IP-CIDR6', 'GEOIP', 'GEOSITE',
+                    'PROCESS-NAME', 'PROCESS-PATH',
+                    'SRC-IP-CIDR', 'SRC-PORT', 'DST-PORT',
+                    'AND', 'OR', 'NOT', 'MATCH'
+                ];
+
+                if (supportedTypes.includes(ruleType)) {
+                    if (parts.length === 2) {
+                        // TYPE,VALUE -> TYPE,VALUE,group
+                        rules.push(\`\${line},\${group}\`);
+                    } else if (parts.length === 3) {
+                        // Check if third part is an option (like no-resolve) or a policy
+                        const thirdPart = parts[2].trim().toLowerCase();
+                        if (ruleOptions.includes(thirdPart)) {
+                            // TYPE,VALUE,no-resolve -> TYPE,VALUE,group,no-resolve
+                            rules.push(\`\${parts[0]},\${parts[1]},\${group},\${parts[2]}\`);
+                        } else {
+                            // TYPE,VALUE,POLICY -> use as-is
+                            rules.push(line);
+                        }
+                    } else {
+                        // 4+ parts, use as-is
+                        rules.push(line);
+                    }
+                }
+            }
+        }
+
+        return rules;
+    }
+
+    deduplicateProxies(proxies) {
+        const seen = new Set();
+        const unique = [];
+
+        for (const proxy of proxies) {
+            const key = \`\${proxy.name}|\${proxy.server}|\${proxy.port}\`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                unique.push(proxy);
+            }
+        }
+
+        return unique;
+    }
+
+    proxyToYaml(proxy, existingNames) {
+        const clean = this.cleanProxy(proxy);
+
+        // Ensure unique name
+        let name = clean.name;
+        let counter = 1;
+        while (existingNames.has(name)) {
+            name = \`\${clean.name} \${counter}\`;
+            counter++;
+        }
+        existingNames.add(name);
+        clean.name = name;
+
+        let yaml = \`  - name: \${clean.name}\n\`;
+        yaml += \`    type: \${clean.type}\n\`;
+        yaml += \`    server: \${clean.server}\n\`;
+        yaml += \`    port: \${clean.port}\n\`;
+
+        // 根据类型添加其他字段
+        if (clean.type === 'ss') {
+            yaml += \`    cipher: \${clean.cipher || 'auto'}\n\`;
+            yaml += \`    password: "\${clean.password}"\n\`;
+            if (clean.plugin) {
+                yaml += \`    plugin: \${clean.plugin}\n\`;
+                if (clean['plugin-opts']) {
+                    yaml += \`    plugin-opts:\n\`;
+                    for (const [k, v] of Object.entries(clean['plugin-opts'])) {
+                        const val = typeof v === 'boolean' || v === 'true' || v === 'false' ? v : \`"\${v}"\`;
+                        yaml += \`      \${k}: \${val}\n\`;
+                    }
+                }
+            }
+        } else if (clean.type === 'vmess') {
+            yaml += \`    uuid: \${clean.uuid}\n\`;
+            yaml += \`    alterId: \${clean.alterId || 0}\n\`;
+            yaml += \`    cipher: \${clean.cipher || 'auto'}\n\`;
+            if (clean.tls) yaml += \`    tls: true\n\`;
+            if (clean.network) yaml += \`    network: \${clean.network}\n\`;
+            if (clean['ws-opts']) {
+                yaml += \`    ws-opts:\n\`;
+                yaml += \`      path: "\${clean['ws-opts'].path || '/'}"\n\`;
+                if (clean['ws-opts'].headers?.Host) {
+                    yaml += \`      headers:\n        Host: \${clean['ws-opts'].headers.Host}\n\`;
+                }
+            }
+        } else if (clean.type === 'vless') {
+            yaml += \`    uuid: \${clean.uuid}\n\`;
+            if (clean.tls) yaml += \`    tls: true\n\`;
+            // client-fingerprint 放在 tls 后面
+            if (clean['client-fingerprint']) {
+                yaml += \`    client-fingerprint: \${clean['client-fingerprint']}\n\`;
+            }
+            if (clean.servername) yaml += \`    servername: \${clean.servername}\n\`;
+            if (clean.network) yaml += \`    network: \${clean.network}\n\`;
+            if (clean['reality-opts']) {
+                yaml += \`    reality-opts:\n\`;
+                yaml += \`      public-key: \${clean['reality-opts']['public-key']}\n\`;
+                if (clean['reality-opts']['short-id']) {
+                    yaml += \`      short-id: \${clean['reality-opts']['short-id']}\n\`;
+                }
+            }
+            if (clean['ws-opts']) {
+                yaml += \`    ws-opts:\n\`;
+                let path = clean['ws-opts'].path || '/';
+                try {
+                    if (path.includes('%')) path = decodeURIComponent(path);
+                } catch (e) { }
+                yaml += \`      path: "\${path}"\n\`;
+                if (clean['ws-opts'].headers) {
+                    yaml += \`      headers:\n\`;
+                    for (const [k, v] of Object.entries(clean['ws-opts'].headers)) {
+                        yaml += \`        \${k}: \${v}\n\`;
+                    }
+                }
+            }
+            yaml += \`    tfo: false\n\`;
+            yaml += \`    skip-cert-verify: \${clean['skip-cert-verify'] === true}\n\`;
+            // flow 放在最后
+            if (clean.flow) yaml += \`    flow: \${clean.flow}\n\`;
+        } else if (clean.type === 'trojan') {
+            yaml += \`    password: "\${clean.password}"\n\`;
+            if (clean.sni) yaml += \`    sni: \${clean.sni}\n\`;
+            if (clean.network) yaml += \`    network: \${clean.network}\n\`;
+        } else if (clean.type === 'hysteria2') {
+            yaml += \`    password: "\${clean.password}"\n\`;
+            if (clean.sni) yaml += \`    sni: \${clean.sni}\n\`;
+        } else if (clean.type === 'tuic') {
+            yaml += \`    uuid: \${clean.uuid}\n\`;
+            yaml += \`    password: "\${clean.password}"\n\`;
+            if (clean.sni) yaml += \`    sni: \${clean.sni}\n\`;
+        }
+
+        // client-fingerprint 已在各类型中单独处理
+        // 只为非 VLESS 类型添加
+        if (clean.type !== 'vless' && clean['client-fingerprint']) {
+            yaml += \`    client-fingerprint: \${clean['client-fingerprint']}\n\`;
+        }
+
+        if (clean['skip-cert-verify'] && clean.type !== 'vless') {
+            yaml += \`    skip-cert-verify: true\n\`;
+        }
+
+        return yaml;
+    }
+
+    proxyGroupToYaml(group) {
+        let yaml = \`  - name: "\${group.name}"\n\`;
+        yaml += \`    type: \${group.type}\n\`;
+
+        // 去重 proxies
+        const uniqueProxies = [...new Set(group.proxies)];
+        yaml += \`    proxies:\n\`;
+        for (const p of uniqueProxies) {
+            yaml += \`      - "\${p}"\n\`;
+        }
+
+        if (group.type === 'url-test' || group.type === 'fallback' || group.type === 'load-balance') {
+            yaml += \`    url: http://www.gstatic.com/generate_204\n\`;
+            yaml += \`    interval: \${group.interval || 300}\n\`;
+            if (group.tolerance) yaml += \`    tolerance: \${group.tolerance}\n\`;
+            if (group.type === 'load-balance' && group.strategy) {
+                yaml += \`    strategy: \${group.strategy}\n\`;
+            }
+        }
+
+        return yaml;
+    }
+
+    generateProxyGroups(proxyNames) {
+        const groups = [];
+        const removedGroups = new Set();
+        this.removedGroups = removedGroups; // Store for rules generation
+
+        // First pass: Process groups with filters
+        for (const g of this.config.proxyGroups) {
+            if (g.filter) {
+                const group = { name: g.name, type: g.type };
+                try {
+                    const regex = new RegExp(g.filter, 'i');
+                    const matched = proxyNames.filter(n => regex.test(n));
+                    if (matched.length === 0) {
+                        removedGroups.add(g.name);
+                        continue; // Skip empty filtered group
+                    }
+                    group.proxies = [...new Set(matched)];
+                } catch {
+                    removedGroups.add(g.name);
+                    continue;
+                }
+
+                if (g.type === 'url-test' || g.type === 'fallback' || g.type === 'load-balance') {
+                    group.url = g.url || 'http://www.gstatic.com/generate_204';
+                    group.interval = g.interval || 300;
+                    if (g.tolerance) group.tolerance = g.tolerance;
+                    if (g.type === 'load-balance' && g.strategy) group.strategy = g.strategy;
+                }
+                groups.push(group);
+            }
+        }
+
+        // Second pass: Process groups without filters (manual lists)
+        for (const g of this.config.proxyGroups) {
+            if (!g.filter) {
+                const group = { name: g.name, type: g.type };
+                let proxies = g.proxies || [];
+
+                // Filter out removed groups from the proxies list
+                if (proxies.length > 0) {
+                    proxies = proxies.filter(p => !removedGroups.has(p));
+                }
+
+                // If special handling needed for 'select' groups that might become empty
+                // usually these have static items like 'DIRECT' or 'REJECT', so we don't need aggressive fallback
+                if (proxies.length === 0) proxies = ['DIRECT'];
+
+                group.proxies = [...new Set(proxies)]; // Deduplicate
+
+                if (g.type === 'url-test' || g.type === 'fallback' || g.type === 'load-balance') {
+                    group.url = g.url || 'http://www.gstatic.com/generate_204';
+                    group.interval = g.interval || 300;
+                    if (g.tolerance) group.tolerance = g.tolerance;
+                    if (g.type === 'load-balance' && g.strategy) group.strategy = g.strategy;
+                }
+                groups.push(group);
+            }
+        }
+
+        const finalGroups = [];
+        const groupMap = new Map(groups.map(g => [g.name, g]));
+
+        for (const g of this.config.proxyGroups) {
+            if (groupMap.has(g.name)) {
+                finalGroups.push(groupMap.get(g.name));
+            }
+        }
+
+        return finalGroups;
+    }
+
+    generateRules() {
+        return [
+            'GEOIP,CN,🎯 全球直连',
+            'MATCH,🐟 漏网之鱼'
+        ];
+    }
+
+    generateRulesWithProviders() {
+        const rules = [];
+
+        for (const rs of this.config.rulesets) {
+            let group = rs.group;
+            // Check if group was removed due to being empty
+            if (this.removedGroups && this.removedGroups.has(group)) {
+                group = 'DIRECT';
+            }
+
+            if (rs.isBuiltin) {
+                if (rs.type === 'GEOIP') {
+                    rules.push(\`GEOIP,\${rs.value},\${group}\`);
+                }
+            } else {
+                const name = this.getProviderName(rs.source);
+                rules.push(\`RULE-SET,\${name},\${group}\`);
+            }
+        }
+
+        rules.push('MATCH,🐟 漏网之鱼');
+        return rules;
+    }
+
+    generateRuleProvidersYaml() {
+        let yaml = '';
+
+        for (const rs of this.config.rulesets) {
+            if (!rs.isBuiltin) {
+                const name = this.getProviderName(rs.source);
+                yaml += \`  \${name}:\n\`;
+                yaml += \`    type: http\n\`;
+                yaml += \`    behavior: classical\n\`;
+                yaml += \`    url: "\${rs.source}"\n\`;
+                yaml += \`    path: ./ruleset/\${name}.yaml\n\`;
+                yaml += \`    interval: 86400\n\`;
+            }
+        }
+
+        return yaml;
+    }
+
+    getProviderName(url) {
+        const match = url.match(/\/([^\/]+?)(?:\.list|\.yaml|\.txt)?$/);
+        if (match) return match[1].replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+        return 'provider_' + btoa(url).substring(0, 8).replace(/[=+\/]/g, '_');
+    }
+
+    cleanProxy(proxy) {
+        const cleaned = {};
+        for (const [key, value] of Object.entries(proxy)) {
+            if (value !== undefined && value !== null) {
+                cleaned[key] = value;
+            }
+        }
+        return cleaned;
+    }
+}
+
+/**
+ * Handle Clash Subscription
+ */
+async function handleClashSubscribe(db, url, env) {
+    const params = new URL(url).searchParams;
+    const subUrl = params.get('url');
+
+    if (!subUrl) {
+        return new Response('Missing url parameter', { status: 400 });
+    }
+
+    // Fetch subscriptions
+    const subscriptionUrls = decodeURIComponent(subUrl).split('|');
+    const subParser = new SubParser();
+    let allProxies = [];
+
+    for (const u of subscriptionUrls) {
+        try {
+            const response = await fetch(u, {
+                headers: { 'User-Agent': 'ClashSubConverter/1.0' }
+            });
+            if (response.ok) {
+                const content = await response.text();
+                const proxies = subParser.parse(content);
+                allProxies = allProxies.concat(proxies);
+            }
+        } catch (e) {
+            console.error(\`Failed to fetch: \${u}\`, e);
+        }
+    }
+
+    if (allProxies.length === 0) {
+        return new Response('No valid proxies found', { status: 400 });
+    }
+
+    // Apply filters
+    const exclude = params.get('exclude');
+    const include = params.get('include');
+    const emoji = params.get('emoji') !== 'false';
+
+    if (exclude) {
+        try {
+            const regex = new RegExp(decodeURIComponent(exclude), 'i');
+            allProxies = allProxies.filter(p => !regex.test(p.name));
+        } catch(e) {}
+    }
+
+    if (include) {
+        try {
+             const regex = new RegExp(decodeURIComponent(include), 'i');
+             allProxies = allProxies.filter(p => regex.test(p.name));
+        } catch(e) {}
+    }
+
+    if (emoji) {
+        allProxies = allProxies.map(p => subParser.addEmoji(p));
+    }
+
+    // Generate config
+    const generator = new ClashGenerator(CONFIG);
+    const output = await generator.generate(allProxies);
+
+    return new Response(output, {
+        headers: {
+            'Content-Type': 'text/yaml; charset=utf-8',
+            'Content-Disposition': 'attachment; filename="clash.yaml"',
+            'Access-Control-Allow-Origin': '*'
+        }
+    });
+}
+
 

@@ -368,6 +368,34 @@ Star
 </div>
 </div>
 
+<div id="clashSettingsModal" class="modal hidden">
+<div class="modal-content">
+<div class="modal-header">
+<h3>Clash 订阅设置</h3>
+<button class="close-btn" onclick="closeClashSettings()">&times;</button>
+</div>
+<div class="form-group">
+<label>排除节点 (正则表达式)</label>
+<input type="text" id="clashExclude" placeholder="例如: 流量|官网">
+</div>
+<div class="form-group">
+<label>包含节点 (正则表达式)</label>
+<input type="text" id="clashInclude" placeholder="例如: 香港|日本">
+</div>
+<div class="form-group" style="display:flex;align-items:center;justify-content:space-between">
+<label style="margin:0">启用 Emoji</label>
+<label class="switch">
+<input type="checkbox" id="clashEmoji" checked>
+<span class="slider"></span>
+</label>
+</div>
+<div class="alert alert-info" style="font-size:12px;margin-top:12px;background:#e3f2fd;color:#0d47a1">
+设置将保存在本地，并应用于生成的 Clash 订阅链接。
+</div>
+<button class="btn btn-primary btn-full" style="margin-top:16px" onclick="saveClashSettings()">保存设置</button>
+</div>
+</div>
+
 <script>
 const API='/api';
 let apiKey=localStorage.getItem('apiKey'),modalType='',editId=null;
@@ -481,6 +509,45 @@ hideLoading();
 }
 }
 
+function showClashSettings() {
+    const settings = JSON.parse(localStorage.getItem('clashSettings') || '{}');
+    document.getElementById('clashExclude').value = settings.exclude || '';
+    document.getElementById('clashInclude').value = settings.include || '';
+    document.getElementById('clashEmoji').checked = settings.emoji !== false;
+    document.getElementById('clashSettingsModal').classList.remove('hidden');
+}
+
+function closeClashSettings() {
+    document.getElementById('clashSettingsModal').classList.add('hidden');
+}
+
+function saveClashSettings() {
+    const settings = {
+        exclude: document.getElementById('clashExclude').value.trim(),
+        include: document.getElementById('clashInclude').value.trim(),
+        emoji: document.getElementById('clashEmoji').checked
+    };
+    localStorage.setItem('clashSettings', JSON.stringify(settings));
+    closeClashSettings();
+    loadVlessConfig();
+    loadSSConfig();
+    alert('设置已保存');
+}
+
+function getClashUrl(subUrl) {
+    const settings = JSON.parse(localStorage.getItem('clashSettings') || '{}');
+    let url = `${location.origin}/sub/clash?url=${encodeURIComponent(subUrl)}`;
+    if (settings.exclude) url += `&exclude=${encodeURIComponent(settings.exclude)}`;
+    if (settings.include) url += `&include=${encodeURIComponent(settings.include)}`;
+    if (settings.emoji === false) url += `&emoji=false`;
+    return url;
+}
+
+function copyClashSub(subUrl) {
+    const url = getClashUrl(subUrl);
+    copyText(url);
+}
+
 async function loadVlessConfig(){
 const d=await api('/subscribe/config?type=vless');
 if(!d.success)return;
@@ -493,7 +560,6 @@ return;
 
 list.innerHTML=d.data.map(item=>{
 const subUrl=`${location.origin}/sub/token/${item.token}`;
-const clashUrl=`https://sublink.eooce.com/clash?config=${encodeURIComponent(subUrl)}`;
 const statusClass=item.enabled?'online':'offline';
 const statusText=item.enabled?'已启用':'已禁用';
 return `
@@ -515,7 +581,8 @@ return `
 </div>
 <div class="card-actions">
 <button class="btn btn-success btn-sm" onclick="copyText('${subUrl}')">📋 复制订阅</button>
-<button class="btn btn-success btn-sm" onclick="copyText('${clashUrl}')">📋 复制Clash订阅</button>
+<button class="btn btn-success btn-sm" onclick="copyClashSub('${subUrl}')">📋 复制Clash订阅</button>
+<button class="btn btn-info btn-sm" onclick="showClashSettings()">⚙️ 转换设置</button>
 <button class="btn btn-warning btn-sm" onclick="editSubscribeConfig('vless',${item.id})">✏️ 编辑</button>
 <button class="btn btn-info btn-sm" onclick="resetSubscribeToken(${item.id})">🔄 重置Token</button>
 <button class="btn btn-${item.enabled?'secondary':'success'} btn-sm" onclick="toggleSubscribeEnable(${item.id},${!item.enabled})">${item.enabled?'禁用':'启用'}</button>
@@ -538,7 +605,6 @@ return;
 
 list.innerHTML=d.data.map(item=>{
 const subUrl=`${location.origin}/sub/token/${item.token}`;
-const clashUrl=`https://sublink.eooce.com/clash?config=${encodeURIComponent(subUrl)}`;
 const statusClass=item.enabled?'online':'offline';
 const statusText=item.enabled?'已启用':'已禁用';
 return `
@@ -560,7 +626,8 @@ return `
 </div>
 <div class="card-actions">
 <button class="btn btn-success btn-sm" onclick="copyText('${subUrl}')">📋 复制订阅</button>
-<button class="btn btn-success btn-sm" onclick="copyText('${clashUrl}')">📋 复制Clash订阅</button>
+<button class="btn btn-success btn-sm" onclick="copyClashSub('${subUrl}')">📋 复制Clash订阅</button>
+<button class="btn btn-info btn-sm" onclick="showClashSettings()">⚙️ 转换设置</button>
 <button class="btn btn-warning btn-sm" onclick="editSubscribeConfig('ss',${item.id})">✏️ 编辑</button>
 <button class="btn btn-info btn-sm" onclick="resetSubscribeToken(${item.id})">🔄 重置Token</button>
 <button class="btn btn-${item.enabled?'secondary':'success'} btn-sm" onclick="toggleSubscribeEnable(${item.id},${!item.enabled})">${item.enabled?'禁用':'启用'}</button>
