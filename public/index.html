@@ -656,6 +656,7 @@ return `
 <button class="btn btn-success btn-sm" onclick="copyClashSub('${subUrl}')">📋 复制Clash订阅</button>
 <button class="btn btn-info btn-sm" onclick="showClashSettings()">⚙️ 转换设置</button>
 <button class="btn btn-warning btn-sm" onclick="editArgo(${item.id})">✏️ 编辑</button>
+<button class="btn btn-info btn-sm" onclick="resetArgoToken(${item.id})">🔄 重置Token</button>
 <button class="btn btn-${item.enabled?'secondary':'success'} btn-sm" onclick="toggleArgoEnable(${item.id},${!item.enabled})">${item.enabled?'禁用':'启用'}</button>
 <button class="btn btn-danger btn-sm" onclick="deleteArgo(${item.id})">🗑️ 删除</button>
 </div>
@@ -695,6 +696,18 @@ async function deleteArgo(id){
 if(!confirm('确定删除该ARGO订阅吗？'))return;
 await api('/argo/'+id,'DELETE');
 loadArgoSubscribes();
+}
+
+async function resetArgoToken(id){
+if(!confirm('确定重置此订阅的 Token？\\n\\n重置后旧的订阅地址将失效，需要使用新的订阅地址。'))return;
+showLoading();
+try{
+const d=await api(`/argo/${id}/reset-token`,'POST');
+if(d.success){
+await loadArgoSubscribes();
+alert(`Token 已重置\\n\\n新 Token: ${d.data.token}`);
+}else alert(d.error);
+}finally{hideLoading()}
 }
 
 async function loadProxyIPs(){

@@ -219,7 +219,11 @@ export default {
             if (method === 'POST') return handleAddArgoSubscribe(request, env.DB);
         }
         if (path.startsWith('/api/argo/')) {
-            const id = path.split('/')[3];
+            const parts = path.split('/');
+            const id = parts[3];
+            if (parts[4] === 'reset-token' && method === 'POST') {
+                return handleResetArgoToken(env.DB, id);
+            }
             if (method === 'PUT') return handleUpdateArgoSubscribe(request, env.DB, id);
             if (method === 'DELETE') return handleDeleteArgoSubscribe(env.DB, id);
         }
@@ -492,6 +496,12 @@ async function handleBatchDeleteArgoSubscribe(request, db) {
     const placeholders = ids.map(() => '?').join(',');
     await db.prepare(`DELETE FROM argo_subscribe WHERE id IN (${placeholders})`).bind(...ids).run();
     return json({ success: true });
+}
+
+async function handleResetArgoToken(db, id) {
+    const newToken = generateRandomToken(32);
+    await db.prepare('UPDATE argo_subscribe SET token = ?, updated_at = datetime("now") WHERE id = ?').bind(newToken, id).run();
+    return json({ success: true, data: { token: newToken } });
 }
 
 // ARGO 订阅生成
@@ -2789,107 +2799,373 @@ proxies:
         return unique;
     }
 
-    proxyToYaml(proxy, existingNames) {
-        const clean = this.cleanProxy(proxy);
+        proxyToYaml(proxy, existingNames) {
 
-        // Ensure unique name
-        let name = clean.name;
-        let counter = 1;
-        while (existingNames.has(name)) {
-            name = `${clean.name} ${counter}`;
-            counter++;
-        }
-        existingNames.add(name);
-        clean.name = name;
+            const clean = this.cleanProxy(proxy);
 
-        let yaml = ` - name: ${clean.name}\n`;
-        yaml += `   type: ${clean.type}\n`;
-        yaml += `   server: ${clean.server}\n`;
-        yaml += `   port: ${clean.port}\n`;
+    
 
-        // 根据类型添加其他字段
-        if (clean.type === 'ss') {
-            yaml += `   cipher: ${clean.cipher || 'auto'}\n`;
-            yaml += `   password: "${clean.password}"\n`;
-            if (clean.plugin) {
-                yaml += `   plugin: ${clean.plugin}\n`;
-                if (clean['plugin-opts']) {
-                    yaml += `   plugin-opts:\n`;
-                    for (const [k, v] of Object.entries(clean['plugin-opts'])) {
-                        const val = typeof v === 'boolean' || v === 'true' || v === 'false' ? v : `"${v}"`;
-                        yaml += `     ${k}: ${val}\n`;
+            // Ensure unique name
+
+            let name = clean.name;
+
+            let counter = 1;
+
+            while (existingNames.has(name)) {
+
+                name = `${clean.name} ${counter}`;
+
+                counter++;
+
+            }
+
+            existingNames.add(name);
+
+            clean.name = name;
+
+    
+
+            let yaml = `  - name: ${clean.name}\n`;
+
+            yaml += `    type: ${clean.type}\n`;
+
+            yaml += `    server: ${clean.server}\n`;
+
+            yaml += `    port: ${clean.port}\n`;
+
+            yaml += `    udp: true\n`;
+
+    
+
+                    // 根据类型添加其他字段
+
+    
+
+                    if (clean.type === 'ss') {
+
+    
+
+                        yaml += `    cipher: ${clean.cipher || 'auto'}\n`;
+
+    
+
+                        yaml += `    password: "${clean.password}"\n`;
+
+    
+
+                        if (clean.plugin) {
+
+    
+
+                            yaml += `    plugin: ${clean.plugin}\n`;
+
+    
+
+                            if (clean['plugin-opts']) {
+
+    
+
+                                yaml += `    plugin-opts:\n`;
+
+    
+
+                                for (const [k, v] of Object.entries(clean['plugin-opts'])) {
+
+    
+
+                                    const val = typeof v === 'boolean' || v === 'true' || v === 'false' ? v : `"${v}"`;
+
+    
+
+                                    yaml += `      ${k}: ${val}\n`;
+
+    
+
+                                }
+
+    
+
+                            }
+
+    
+
+                        }
+
+    
+
+                    } else if (clean.type === 'vmess') {
+
+    
+
+                        yaml += `    uuid: ${clean.uuid}\n`;
+
+    
+
+                        yaml += `    alterId: ${clean.alterId || 0}\n`;
+
+    
+
+                        yaml += `    cipher: ${clean.cipher || 'auto'}\n`;
+
+    
+
+                        if (clean.tls) yaml += `    tls: true\n`;
+
+    
+
+                        if (clean.network) yaml += `    network: ${clean.network}\n`;
+
+    
+
+                        if (clean['ws-opts']) {
+
+    
+
+                            yaml += `    ws-opts:\n`;
+
+    
+
+                            yaml += `      path: "${clean['ws-opts'].path || '/'}"\n`;
+
+    
+
+                            if (clean['ws-opts'].headers?.Host) {
+
+    
+
+                                yaml += `      headers:\n        Host: ${clean['ws-opts'].headers.Host}\n`;
+
+    
+
+                            }
+
+    
+
+                        }
+
+    
+
+                    } else if (clean.type === 'vless') {
+
+    
+
+                        yaml += `    uuid: ${clean.uuid}\n`;
+
+    
+
+                        if (clean.tls) yaml += `    tls: true\n`;
+
+    
+
+                        // client-fingerprint 放在 tls 后面
+
+    
+
+                        if (clean['client-fingerprint']) {
+
+    
+
+                            yaml += `    client-fingerprint: ${clean['client-fingerprint']}\n`;
+
+    
+
+                        }
+
+    
+
+                        if (clean.servername) yaml += `    servername: ${clean.servername}\n`;
+
+    
+
+                        if (clean.network) yaml += `    network: ${clean.network}\n`;
+
+    
+
+                        if (clean['reality-opts']) {
+
+    
+
+                            yaml += `    reality-opts:\n`;
+
+    
+
+                            yaml += `      public-key: ${clean['reality-opts']['public-key']}\n`;
+
+    
+
+                            if (clean['reality-opts']['short-id']) {
+
+    
+
+                                yaml += `      short-id: ${clean['reality-opts']['short-id']}\n`;
+
+    
+
+                            }
+
+    
+
+                        }
+
+    
+
+                        if (clean['ws-opts']) {
+
+    
+
+                            yaml += `    ws-opts:\n`;
+
+    
+
+                            let path = clean['ws-opts'].path || '/';
+
+    
+
+                            try {
+
+    
+
+                                if (path.includes('%')) path = decodeURIComponent(path);
+
+    
+
+                            } catch (e) { }
+
+    
+
+                            yaml += `      path: "${path}"\n`;
+
+    
+
+                            if (clean['ws-opts'].headers) {
+
+    
+
+                                yaml += `      headers:\n`;
+
+    
+
+                                for (const [k, v] of Object.entries(clean['ws-opts'].headers)) {
+
+    
+
+                                    yaml += `        ${k}: ${v}\n`;
+
+    
+
+                                }
+
+    
+
+                            }
+
+    
+
+                        }
+
+    
+
+                        yaml += `    tfo: false\n`;
+
+    
+
+                        yaml += `    skip-cert-verify: ${clean['skip-cert-verify'] === true}\n`;
+
+    
+
+                        // flow 放在最后
+
+    
+
+                        if (clean.flow) yaml += `    flow: ${clean.flow}\n`;
+
+    
+
+                    } else if (clean.type === 'trojan') {
+
+    
+
+                        yaml += `    password: "${clean.password}"\n`;
+
+    
+
+                        if (clean.sni) yaml += `    sni: ${clean.sni}\n`;
+
+    
+
+                        if (clean.network) yaml += `    network: ${clean.network}\n`;
+
+    
+
+                    } else if (clean.type === 'hysteria2') {
+
+    
+
+                        yaml += `    password: "${clean.password}"\n`;
+
+    
+
+                        if (clean.sni) yaml += `    sni: ${clean.sni}\n`;
+
+    
+
+                    } else if (clean.type === 'tuic') {
+
+    
+
+                        yaml += `    uuid: ${clean.uuid}\n`;
+
+    
+
+                        yaml += `    password: "${clean.password}"\n`;
+
+    
+
+                        if (clean.sni) yaml += `    sni: ${clean.sni}\n`;
+
+    
+
                     }
-                }
-            }
-        } else if (clean.type === 'vmess') {
-            yaml += `   uuid: ${clean.uuid}\n`;
-            yaml += `   alterId: ${clean.alterId || 0}\n`;
-            yaml += `   cipher: ${clean.cipher || 'auto'}\n`;
-            if (clean.tls) yaml += `   tls: true\n`;
-            if (clean.network) yaml += `   network: ${clean.network}\n`;
-            if (clean['ws-opts']) {
-                yaml += `   ws-opts:\n`;
-                yaml += `     path: "${clean['ws-opts'].path || '/'}"\n`;
-                if (clean['ws-opts'].headers?.Host) {
-                    yaml += `     headers:\n        Host: ${clean['ws-opts'].headers.Host}\n`;
-                }
-            }
-        } else if (clean.type === 'vless') {
-            yaml += `   uuid: ${clean.uuid}\n`;
-            if (clean.tls) yaml += `   tls: true\n`;
-            // client-fingerprint 放在 tls 后面
-            if (clean['client-fingerprint']) {
-                yaml += `   client-fingerprint: ${clean['client-fingerprint']}\n`;
-            }
-            if (clean.servername) yaml += `   servername: ${clean.servername}\n`;
-            if (clean.network) yaml += `   network: ${clean.network}\n`;
-            if (clean['reality-opts']) {
-                yaml += `   reality-opts:\n`;
-                yaml += `     public-key: ${clean['reality-opts']['public-key']}\n`;
-                if (clean['reality-opts']['short-id']) {
-                    yaml += `     short-id: ${clean['reality-opts']['short-id']}\n`;
-                }
-            }
-            if (clean['ws-opts']) {
-                yaml += `   ws-opts:\n`;
-                let path = clean['ws-opts'].path || '/';
-                try {
-                    if (path.includes('%')) path = decodeURIComponent(path);
-                } catch (e) { }
-                yaml += `     path: "${path}"\n`;
-                if (clean['ws-opts'].headers) {
-                    yaml += `     headers:\n`;
-                    for (const [k, v] of Object.entries(clean['ws-opts'].headers)) {
-                        yaml += `       ${k}: ${v}\n`;
+
+    
+
+            
+
+    
+
+                    // client-fingerprint 已在各类型中单独处理
+
+    
+
+                    // 只为非 VLESS 类型添加
+
+    
+
+                    if (clean.type !== 'vless' && clean['client-fingerprint']) {
+
+    
+
+                        yaml += `    client-fingerprint: ${clean['client-fingerprint']}\n`;
+
+    
+
                     }
-                }
-            }
-            yaml += `   tfo: false\n`;
-            yaml += `   skip-cert-verify: ${clean['skip-cert-verify'] === true}\n`;
-            // flow 放在最后
-            if (clean.flow) yaml += `   flow: ${clean.flow}\n`;
-        } else if (clean.type === 'trojan') {
-            yaml += `   password: "${clean.password}"\n`;
-            if (clean.sni) yaml += `   sni: ${clean.sni}\n`;
-            if (clean.network) yaml += `   network: ${clean.network}\n`;
-        } else if (clean.type === 'hysteria2') {
-            yaml += `   password: "${clean.password}"\n`;
-            if (clean.sni) yaml += `   sni: ${clean.sni}\n`;
-        } else if (clean.type === 'tuic') {
-            yaml += `   uuid: ${clean.uuid}\n`;
-            yaml += `   password: "${clean.password}"\n`;
-            if (clean.sni) yaml += `   sni: ${clean.sni}\n`;
-        }
 
-        // client-fingerprint 已在各类型中单独处理
-        // 只为非 VLESS 类型添加
-        if (clean.type !== 'vless' && clean['client-fingerprint']) {
-            yaml += `   client-fingerprint: ${clean['client-fingerprint']}\n`;
-        }
+    
 
-        if (clean['skip-cert-verify'] && clean.type !== 'vless') {
-            yaml += `   skip-cert-verify: true\n`;
-        }
+            
+
+    
+
+                    if (clean['skip-cert-verify'] && clean.type !== 'vless') {
+
+    
+
+                        yaml += `    skip-cert-verify: true\n`;
+
+    
+
+                    }
 
         return yaml;
     }
