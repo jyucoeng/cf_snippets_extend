@@ -2391,7 +2391,7 @@
             if (type === 'proxyip') {
                 document.getElementById('batchHelp').innerHTML = '<b>格式说明：</b>每行一条，支持以下格式：<br>• IP/域名#备注<br>备注可选，没有备注则自动生成';
             } else if (type === 'outbound') {
-                document.getElementById('batchHelp').innerHTML = '<b>格式说明：</b>每行一条，支持以下格式：<br>• socks5://host:port#备注<br>• socks5://user:pass@host:port#备注<br>• http://host:port#备注<br>• http://user:pass@host:port#备注<br>备注可选，没有备注则自动生成';
+                document.getElementById('batchHelp').innerHTML = '<b>格式说明：</b>每行一条，支持以下格式：<br>• socks://base64(user:pass)@host:port#备注<br>• socks5://host:port#备注<br>• socks5://user:pass@host:port#备注<br>• http://host:port#备注<br>• http://user:pass@host:port#备注<br>备注可选，没有备注则自动生成';
             } else if (type === 'argo') {
                 document.getElementById('batchHelp').innerHTML = '<b>格式说明：</b>每行一条 VLESS 或 VMess 模板链接<br><b>VLESS示例：</b><br><code>vless://12345678@example.com:443?encryption=none&security=tls&sni=argo.example.com&fp=firefox&type=ws&host=argo.example.com&path=%2Fvless-argo%3Fed%3D2560#美国节点</code><br><b>VMess示例：</b><br><code>vmess://eyAidiI6ICIyIiwgInBzIjogIkFsdGFyZV9TRy1WdWx0ciIsICJhZGQiOiAiY25hbWUuanZ2di5kZSIsICJwb3J0IjogIjQ0MyIsICJpZCI6ICI1ZWZkMDQyMC1lM2MzLTQ1ZjMtYTMyNS00NmRlOTY1MjFhMzYiLCAiYWlkIjogIjAiLCAic2N5IjogIm5vbmUiLCAibmV0IjogIndzIiwgInR5cGUiOiAibm9uZSIsICJob3N0IjogInNlcnZlcjEubGVub2FzLmRlIiwgInBhdGgiOiAiL3ZtZXNzLWFyZ28/ZWQ9MjU2MCIsICJ0bHMiOiAidGxzIiwgInNuaSI6ICJzZXJ2ZXIxLmxlbm9hcy5kZSIsICJhbHBuIjogIiIsICJmcCI6ICJjaHJvbWUifQo=</code>';
             } else {
