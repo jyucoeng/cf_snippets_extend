@@ -9,7 +9,10 @@ class CFAutoCheck {
   constructor() {
     this.apiClient = new ApiClient({
       apiUrl: process.env.API_URL,
-      apiKey: process.env.API_KEY
+      apiKey: process.env.API_KEY,
+      maxRetries: parseInt(process.env.API_MAX_RETRIES) || 3,
+      retryDelay: parseInt(process.env.API_RETRY_DELAY) || 2000,
+      useSessionToken: process.env.API_USE_SESSION_TOKEN !== 'false'
     });
     
     this.tester = new Tester({
